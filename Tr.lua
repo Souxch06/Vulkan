@@ -1,4 +1,4 @@
--- Roblox Steal a Brainrot Scanner stylé avec GUI semi-transparente et animations
+-- Roblox Steal a Brainrot Scanner stylé, déplaçable et animé
 -- Auto-join pour Brainrots ≥ 50 000 000 m/s
 
 local HttpService = game:GetService("HttpService")
@@ -6,6 +6,7 @@ local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
@@ -61,7 +62,7 @@ local function getAllBrainrots()
     return allBrainrots
 end
 
--- Création GUI semi-transparente et compacte
+-- Création GUI déplaçable et esthétique
 local function createGui()
     local screenGui = PlayerGui:FindFirstChild("BrainrotScannerGui") or Instance.new("ScreenGui")
     screenGui.Name = "BrainrotScannerGui"
@@ -96,6 +97,40 @@ local function createGui()
     closeButton.Parent = frame
     closeButton.MouseButton1Click:Connect(function()
         screenGui.Enabled = false
+    end)
+
+    -- Drag & Drop
+    local dragging, dragInput, dragStart, startPos
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                   startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+
+    title.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    title.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
     end)
 
     local scrollingFrame = Instance.new("ScrollingFrame")
@@ -139,7 +174,7 @@ local function updateGui(brainrots, scrollingFrame)
             TeleportService:TeleportToPlaceInstance(placeId, br.serverId, LocalPlayer)
         end)
 
-        if br.score >= 50000000 then
+        if br.score >= autoJoinThreshold then
             TeleportService:TeleportToPlaceInstance(placeId, br.serverId, LocalPlayer)
             return
         end

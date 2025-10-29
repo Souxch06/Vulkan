@@ -1,16 +1,17 @@
--- Roblox Steal a Brainrot Scanner avec GUI compacte, esthétique et bouton de fermeture
+-- Roblox Steal a Brainrot Scanner stylé avec GUI semi-transparente et animations
 -- Auto-join pour Brainrots ≥ 50 000 000 m/s
 
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local placeId = 123456789 -- ID réel du jeu
-local refreshTime = 5 -- secondes entre chaque scan
-local maxDisplayed = 30 -- GUI compacte
+local placeId = 123456789
+local refreshTime = 5
+local maxDisplayed = 30
 local displayThreshold = 10
 local autoJoinThreshold = 50000000
 
@@ -43,7 +44,6 @@ local function scanServer(server)
     return brainrots
 end
 
--- Récupérer tous les Brainrots filtrés
 local function getAllBrainrots()
     local allBrainrots = {}
     local cursor
@@ -61,21 +61,21 @@ local function getAllBrainrots()
     return allBrainrots
 end
 
--- Création GUI compacte et esthétique
+-- Création GUI semi-transparente et compacte
 local function createGui()
     local screenGui = PlayerGui:FindFirstChild("BrainrotScannerGui") or Instance.new("ScreenGui")
     screenGui.Name = "BrainrotScannerGui"
     screenGui.Parent = PlayerGui
 
-    local frame = screenGui:FindFirstChild("MainFrame") or Instance.new("Frame")
+    local frame = Instance.new("Frame")
     frame.Name = "MainFrame"
-    frame.Size = UDim2.new(0, 300, 0, 400) -- plus petit
-    frame.Position = UDim2.new(0.02, 0, 0.1, 0) -- coin gauche haut
-    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 60) -- couleur moderne
+    frame.Size = UDim2.new(0, 300, 0, 400)
+    frame.Position = UDim2.new(0.02, 0, 0.1, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    frame.BackgroundTransparency = 0.3
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
 
-    -- Titre
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 30)
     title.BackgroundTransparency = 1
@@ -85,7 +85,6 @@ local function createGui()
     title.TextScaled = true
     title.Parent = frame
 
-    -- Bouton fermer
     local closeButton = Instance.new("TextButton")
     closeButton.Size = UDim2.new(0, 30, 0, 30)
     closeButton.Position = UDim2.new(1, -35, 0, 0)
@@ -116,7 +115,7 @@ local function createGui()
     return scrollingFrame
 end
 
--- Mettre à jour le GUI et auto-join
+-- Mettre à jour GUI avec animation et auto-join
 local function updateGui(brainrots, scrollingFrame)
     scrollingFrame:ClearAllChildren()
     for i, br in ipairs(brainrots) do
@@ -128,12 +127,19 @@ local function updateGui(brainrots, scrollingFrame)
         button.Text = br.name.." | "..br.score
         button.Font = Enum.Font.Gotham
         button.TextScaled = true
+        button.BackgroundTransparency = 0.2
         button.Parent = scrollingFrame
+
+        -- Animation d'apparition
+        button.BackgroundTransparency = 1
+        local tween = TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {BackgroundTransparency = 0.2})
+        tween:Play()
+
         button.MouseButton1Click:Connect(function()
             TeleportService:TeleportToPlaceInstance(placeId, br.serverId, LocalPlayer)
         end)
-        -- Auto-join si score ≥ 50 000 000
-        if br.score >= autoJoinThreshold then
+
+        if br.score >= 50000000 then
             TeleportService:TeleportToPlaceInstance(placeId, br.serverId, LocalPlayer)
             return
         end
@@ -141,7 +147,7 @@ local function updateGui(brainrots, scrollingFrame)
     scrollingFrame.CanvasSize = UDim2.new(0,0,0,math.max(#brainrots*38, scrollingFrame.AbsoluteSize.Y))
 end
 
--- Boucle principale toutes les 5 secondes
+-- Boucle principale
 spawn(function()
     local scrollingFrame = createGui()
     while true do

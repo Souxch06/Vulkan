@@ -26,12 +26,12 @@ local gui = Instance.new("ScreenGui", CoreGui)
 gui.Name = "HubBubbleUI"
 gui.ResetOnSpawn = false
 
--- ===== CENTRAL PANEL =====
+-- ===== PANEL PRINCIPAL =====
 local panel = Instance.new("Frame", gui)
 panel.Size = UDim2.new(0, 300*scale, 0, 400*scale)
 panel.Position = UDim2.new(0.5, -150*scale, 0.5, -200*scale)
 panel.BackgroundColor3 = Color3.fromRGB(85, 0, 127)
-panel.Visible = false
+panel.Visible = true -- déjà ouvert
 panel.BorderSizePixel = 0
 Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 15)
 
@@ -48,7 +48,7 @@ title.TextColor3 = Color3.fromRGB(255,255,255)
 title.Font = Enum.Font.GothamBold
 title.TextScaled = true
 
--- Example button inside panel
+-- Exemple bouton Infinite Jump
 local infJumpBtn = Instance.new("TextButton", panel)
 infJumpBtn.Size = UDim2.new(0.8, 0, 0, 50*scale)
 infJumpBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
@@ -57,7 +57,16 @@ infJumpBtn.BackgroundColor3 = Color3.fromRGB(130, 0, 180)
 infJumpBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", infJumpBtn)
 
--- ===== HUB BUBBLE =====
+-- ===== PANEL PARAMETRES (vide pour l'instant) =====
+local settingsPanel = Instance.new("Frame", gui)
+settingsPanel.Size = UDim2.new(0, 300*scale, 0, 400*scale)
+settingsPanel.Position = UDim2.new(0.5, -150*scale, 0.5, -200*scale)
+settingsPanel.BackgroundColor3 = Color3.fromRGB(50, 0, 100)
+settingsPanel.Visible = false
+settingsPanel.BorderSizePixel = 0
+Instance.new("UICorner", settingsPanel).CornerRadius = UDim.new(0, 15)
+
+-- ===== BUBBLE =====
 local bubble = Instance.new("ImageButton", gui)
 bubble.Size = UDim2.new(0, 50*scale, 0, 50*scale)
 bubble.Position = UDim2.new(0.02, 0, 0.8, 0)
@@ -66,16 +75,16 @@ bubble.Image = "" -- mets ton logo ici en URL si tu veux
 bubble.BorderSizePixel = 0
 Instance.new("UICorner", bubble).CornerRadius = UDim.new(1,0)
 
--- ===== BUBBLE CLICK =====
+-- ===== CLICK BUBBLE =====
 bubble.MouseButton1Click:Connect(function()
-	panel.Visible = not panel.Visible
+	settingsPanel.Visible = not settingsPanel.Visible
 end)
 
 -- ===== DRAG BUBBLE =====
 bubble.Active = true
 bubble.Draggable = true
 
--- ===== SAFE INFINITE JUMP LOGIC =====
+-- ===== LOGIQUE INFINITE JUMP =====
 local UIS = game:GetService("UserInputService")
 local infJumpEnabled = false
 local lastJump = 0

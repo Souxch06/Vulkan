@@ -26,7 +26,7 @@ local gui = Instance.new("ScreenGui", CoreGui)
 gui.Name = "HubBubbleUI"
 gui.ResetOnSpawn = false
 
--- ===== PANEL PRINCIPAL =====
+-- ===== PANEL PRINCIPAL (Infinite Jump) =====
 local panel = Instance.new("Frame", gui)
 panel.Size = UDim2.new(0, 300*scale, 0, 400*scale)
 panel.Position = UDim2.new(0.5, -150*scale, 0.5, -200*scale)
@@ -48,7 +48,7 @@ title.TextColor3 = Color3.fromRGB(255,255,255)
 title.Font = Enum.Font.GothamBold
 title.TextScaled = true
 
--- Exemple bouton Infinite Jump
+-- Bouton Infinite Jump
 local infJumpBtn = Instance.new("TextButton", panel)
 infJumpBtn.Size = UDim2.new(0.8, 0, 0, 50*scale)
 infJumpBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
@@ -56,6 +56,10 @@ infJumpBtn.Text = "Infinite Jump"
 infJumpBtn.BackgroundColor3 = Color3.fromRGB(130, 0, 180)
 infJumpBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", infJumpBtn)
+
+-- Rendre le panel déplaçable
+panel.Active = true
+panel.Draggable = true
 
 -- ===== PANEL PARAMETRES (vide pour l'instant) =====
 local settingsPanel = Instance.new("Frame", gui)
@@ -65,6 +69,10 @@ settingsPanel.BackgroundColor3 = Color3.fromRGB(50, 0, 100)
 settingsPanel.Visible = false
 settingsPanel.BorderSizePixel = 0
 Instance.new("UICorner", settingsPanel).CornerRadius = UDim.new(0, 15)
+
+-- Rendre le panel déplaçable
+settingsPanel.Active = true
+settingsPanel.Draggable = true
 
 -- ===== BUBBLE =====
 local bubble = Instance.new("ImageButton", gui)

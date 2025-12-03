@@ -1,79 +1,93 @@
 -- =========================================
---  Infinite Jump UI - Violet & Responsive
+--  Floating Hub Bubble UI - Violet & Responsive
 -- =========================================
 
-if getgenv().InfiniteJumpUI then return end
-getgenv().InfiniteJumpUI = true
+if getgenv().HubUI then return end
+getgenv().HubUI = true
 
-local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
-
+local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 repeat task.wait() until player
 
--- ===== SETTINGS =====
-local infJumpEnabled = false
-local JUMP_FORCE = 65
-
--- ===== UI SCALE =====
+-- ===== SCALE =====
 local screenSize = workspace.CurrentCamera.ViewportSize
 local scale = math.clamp(math.min(screenSize.X / 1920, screenSize.Y / 1080), 0.6, 1)
 
--- ===== UI =====
+-- ===== REMOVE OLD GUI =====
 pcall(function()
-	if CoreGui:FindFirstChild("InfiniteJumpUI") then
-		CoreGui.InfiniteJumpUI:Destroy()
+	if CoreGui:FindFirstChild("HubBubbleUI") then
+		CoreGui.HubBubbleUI:Destroy()
 	end
 end)
 
+-- ===== SCREEN GUI =====
 local gui = Instance.new("ScreenGui", CoreGui)
-gui.Name = "InfiniteJumpUI"
+gui.Name = "HubBubbleUI"
 gui.ResetOnSpawn = false
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250*scale, 0, 100*scale)
-frame.Position = UDim2.new(0.02, 0, 0.8, 0)
-frame.BackgroundColor3 = Color3.fromRGB(85, 0, 127)
-frame.Active = true
-frame.Draggable = true
-frame.BorderSizePixel = 0
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+-- ===== CENTRAL PANEL =====
+local panel = Instance.new("Frame", gui)
+panel.Size = UDim2.new(0, 300*scale, 0, 400*scale)
+panel.Position = UDim2.new(0.5, -150*scale, 0.5, -200*scale)
+panel.BackgroundColor3 = Color3.fromRGB(85, 0, 127)
+panel.Visible = false
+panel.BorderSizePixel = 0
+Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 15)
 
-local stroke = Instance.new("UIStroke", frame)
+local stroke = Instance.new("UIStroke", panel)
 stroke.Thickness = 2
 stroke.Color = Color3.fromRGB(200, 150, 255)
 
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 25*scale)
+local title = Instance.new("TextLabel", panel)
+title.Size = UDim2.new(1,0,0,40*scale)
 title.Position = UDim2.new(0,0,0,0)
 title.BackgroundTransparency = 1
-title.Text = "Infinite Jump"
+title.Text = "MY HUB"
 title.TextColor3 = Color3.fromRGB(255,255,255)
-title.TextScaled = true
 title.Font = Enum.Font.GothamBold
+title.TextScaled = true
 
-local jumpBtn = Instance.new("TextButton", frame)
-jumpBtn.Size = UDim2.new(0.8, 0, 0, 40*scale)
-jumpBtn.Position = UDim2.new(0.1, 0, 0.5, 0)
-jumpBtn.Text = "OFF"
-jumpBtn.TextScaled = true
-jumpBtn.Font = Enum.Font.GothamSemibold
-jumpBtn.BackgroundColor3 = Color3.fromRGB(130, 0, 180)
-jumpBtn.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", jumpBtn)
+-- Example button inside panel
+local infJumpBtn = Instance.new("TextButton", panel)
+infJumpBtn.Size = UDim2.new(0.8, 0, 0, 50*scale)
+infJumpBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
+infJumpBtn.Text = "Infinite Jump"
+infJumpBtn.BackgroundColor3 = Color3.fromRGB(130, 0, 180)
+infJumpBtn.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", infJumpBtn)
 
--- ===== BUTTON LOGIC =====
-jumpBtn.MouseButton1Click:Connect(function()
-	infJumpEnabled = not infJumpEnabled
-	jumpBtn.Text = infJumpEnabled and "ON" or "OFF"
-	jumpBtn.BackgroundColor3 = infJumpEnabled 
-		and Color3.fromRGB(180, 50, 220) 
-		or Color3.fromRGB(130, 0, 180)
+-- ===== HUB BUBBLE =====
+local bubble = Instance.new("ImageButton", gui)
+bubble.Size = UDim2.new(0, 50*scale, 0, 50*scale)
+bubble.Position = UDim2.new(0.02, 0, 0.8, 0)
+bubble.BackgroundColor3 = Color3.fromRGB(130,0,180)
+bubble.Image = "" -- mets ton logo ici en URL si tu veux
+bubble.BorderSizePixel = 0
+Instance.new("UICorner", bubble).CornerRadius = UDim.new(1,0)
+
+-- ===== BUBBLE CLICK =====
+bubble.MouseButton1Click:Connect(function()
+	panel.Visible = not panel.Visible
 end)
 
--- ===== SAFE INFINITE JUMP =====
+-- ===== DRAG BUBBLE =====
+bubble.Active = true
+bubble.Draggable = true
+
+-- ===== SAFE INFINITE JUMP LOGIC =====
+local UIS = game:GetService("UserInputService")
+local infJumpEnabled = false
 local lastJump = 0
+local JUMP_FORCE = 65
+
+infJumpBtn.MouseButton1Click:Connect(function()
+	infJumpEnabled = not infJumpEnabled
+	infJumpBtn.BackgroundColor3 = infJumpEnabled 
+		and Color3.fromRGB(180,50,220) 
+		or Color3.fromRGB(130,0,180)
+end)
+
 UIS.JumpRequest:Connect(function()
 	if not infJumpEnabled then return end
 	if tick() - lastJump < 0.2 then return end

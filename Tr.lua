@@ -57,10 +57,6 @@ infJumpBtn.BackgroundColor3 = Color3.fromRGB(130, 0, 180)
 infJumpBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", infJumpBtn)
 
--- Rendre le panel déplaçable
-panel.Active = true
-panel.Draggable = true
-
 -- ===== PANEL PARAMETRES (vide pour l'instant) =====
 local settingsPanel = Instance.new("Frame", gui)
 settingsPanel.Size = UDim2.new(0, 300*scale, 0, 400*scale)
@@ -69,10 +65,6 @@ settingsPanel.BackgroundColor3 = Color3.fromRGB(50, 0, 100)
 settingsPanel.Visible = false
 settingsPanel.BorderSizePixel = 0
 Instance.new("UICorner", settingsPanel).CornerRadius = UDim.new(0, 15)
-
--- Rendre le panel déplaçable
-settingsPanel.Active = true
-settingsPanel.Draggable = true
 
 -- ===== BUBBLE =====
 local bubble = Instance.new("ImageButton", gui)
@@ -87,10 +79,6 @@ Instance.new("UICorner", bubble).CornerRadius = UDim.new(1,0)
 bubble.MouseButton1Click:Connect(function()
 	settingsPanel.Visible = not settingsPanel.Visible
 end)
-
--- ===== DRAG BUBBLE =====
-bubble.Active = true
-bubble.Draggable = true
 
 -- ===== LOGIQUE INFINITE JUMP =====
 local UIS = game:GetService("UserInputService")
@@ -116,3 +104,46 @@ UIS.JumpRequest:Connect(function()
 		root.Velocity = Vector3.new(root.Velocity.X, JUMP_FORCE, root.Velocity.Z)
 	end
 end)
+
+-- ===== DRAG PERSONNALISE =====
+local function makeDraggable(frame)
+	local dragging
+	local dragInput
+	local dragStart
+	local startPos
+
+	frame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	frame.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement then
+			dragInput = input
+		end
+	end)
+
+	UIS.InputChanged:Connect(function(input)
+		if dragging and input == dragInput then
+			local delta = input.Position - dragStart
+			frame.Position = UDim2.new(
+				startPos.X.Scale, startPos.X.Offset + delta.X,
+				startPos.Y.Scale, startPos.Y.Offset + delta.Y
+			)
+		end
+	end)
+end
+
+-- Appliquer aux panels et à la bulle
+makeDraggable(panel)
+makeDraggable(settingsPanel)
+makeDraggable(bubble)

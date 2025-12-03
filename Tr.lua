@@ -13,74 +13,55 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 repeat task.wait() until player
 
--- ===== SETTINGS (BOOST PLUS FORT) =====
+-- ===== SETTINGS =====
 local NORMAL_SPEED = 16
-local BOOST_SPEED = 75      -- AUGMENTÉ (différence bien visible)
+local BOOST_SPEED = 75      -- BOOST clair
 local JUMP_FORCE = 65       -- Force du saut infini
 
 local speedEnabled = false
 local infJumpEnabled = false
 
 -- ===== HUMANOID / ROOT =====
-local function getCharacter()
-	return player.Character
-end
-
 local function getHumanoid()
-	local char = getCharacter()
-	if char then
-		return char:FindFirstChildOfClass("Humanoid")
+	if player.Character then
+		return player.Character:FindFirstChildOfClass("Humanoid")
 	end
 end
 
 local function getRoot()
-	local char = getCharacter()
-	if char then
-		return char:FindFirstChild("HumanoidRootPart")
+	if player.Character then
+		return player.Character:FindFirstChild("HumanoidRootPart")
 	end
 end
 
-local function applySpeed()
+-- ===== APPLY SPEED (force chaque frame) =====
+RunService.RenderStepped:Connect(function()
 	local hum = getHumanoid()
-	if not hum then return end
-	if speedEnabled then
+	if hum and speedEnabled then
 		hum.WalkSpeed = BOOST_SPEED
-	else
+	elseif hum then
 		hum.WalkSpeed = NORMAL_SPEED
 	end
-end
-
--- Reapply au respawn
-player.CharacterAdded:Connect(function()
-	task.wait(0.5)
-	applySpeed()
 end)
 
-task.wait(0.5)
-applySpeed()
-
 -- ===== UI =====
-
 pcall(function()
 	if CoreGui:FindFirstChild("UltimateMovementUI") then
 		CoreGui.UltimateMovementUI:Destroy()
 	end
 end)
 
-local gui = Instance.new("ScreenGui")
+local gui = Instance.new("ScreenGui", CoreGui)
 gui.Name = "UltimateMovementUI"
 gui.ResetOnSpawn = false
-gui.Parent = CoreGui
 
-local frame = Instance.new("Frame")
-frame.Parent = gui
+local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.new(0, 270, 0, 200)
 frame.Position = UDim2.new(0.05, 0, 0.35, 0)
 frame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
 frame.Active = true
 frame.Draggable = true
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
-
 local stroke = Instance.new("UIStroke", frame)
 stroke.Thickness = 2
 stroke.Color = Color3.fromRGB(0, 170, 255)
@@ -116,14 +97,12 @@ jumpBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", jumpBtn)
 
 -- ===== BUTTON LOGIC =====
-
 speedBtn.MouseButton1Click:Connect(function()
 	speedEnabled = not speedEnabled
 	speedBtn.Text = speedEnabled and "Speed : ON" or "Speed : OFF"
 	speedBtn.BackgroundColor3 = speedEnabled
 		and Color3.fromRGB(0, 170, 0)
 		or Color3.fromRGB(60, 60, 60)
-	applySpeed()
 end)
 
 jumpBtn.MouseButton1Click:Connect(function()
@@ -134,10 +113,8 @@ jumpBtn.MouseButton1Click:Connect(function()
 		or Color3.fromRGB(60, 60, 60)
 end)
 
--- ===== SAFE INFINITE JUMP (VERSION QUI NE TUE PAS) =====
-
+-- ===== SAFE INFINITE JUMP =====
 local lastJump = 0
-
 UIS.JumpRequest:Connect(function()
 	if not infJumpEnabled then return end
 	if tick() - lastJump < 0.2 then return end
@@ -145,8 +122,6 @@ UIS.JumpRequest:Connect(function()
 
 	local root = getRoot()
 	if root then
-		-- On NE change PAS l’état physique (cause de la mort)
-		-- On ajoute juste une impulsion verticale
 		root.Velocity = Vector3.new(
 			root.Velocity.X,
 			JUMP_FORCE,

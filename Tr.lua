@@ -1,6 +1,6 @@
--- ================================
---  Pretty Speed + Infinite Jump UI
--- ================================
+-- =========================================
+--  PRETTY SPEED + SAFE INFINITE JUMP PANEL
+-- =========================================
 
 if getgenv().PrettyPanelLoaded then return end
 getgenv().PrettyPanelLoaded = true
@@ -8,6 +8,7 @@ getgenv().PrettyPanelLoaded = true
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 repeat task.wait() until player
@@ -19,10 +20,16 @@ local BOOST_SPEED = 45
 local speedEnabled = false
 local infJumpEnabled = false
 
--- ===== FUNCTIONS =====
+-- ===== HUMANOID HANDLING =====
 local function getHumanoid()
 	if player.Character and player.Character:FindFirstChild("Humanoid") then
 		return player.Character.Humanoid
+	end
+end
+
+local function getRoot()
+	if player.Character then
+		return player.Character:FindFirstChild("HumanoidRootPart")
 	end
 end
 
@@ -60,7 +67,6 @@ frame.Position = UDim2.new(0.05, 0, 0.35, 0)
 frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 frame.Active = true
 frame.Draggable = true
-
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
 local stroke = Instance.new("UIStroke", frame)
@@ -116,12 +122,36 @@ jumpBtn.MouseButton1Click:Connect(function()
 		or Color3.fromRGB(60, 60, 60)
 end)
 
--- ===== INFINITE JUMP SYSTEM =====
+-- ===== SAFE INFINITE JUMP (ANTI-DEATH LOOP) =====
+
+local canJump = true
 
 UIS.JumpRequest:Connect(function()
 	if not infJumpEnabled then return end
-	local hum = getHumanoid()
-	if hum then
-		hum:ChangeState(Enum.HumanoidStateType.Jumping)
+	if not canJump then return end
+	
+	local root = getRoot()
+	if root then
+		canJump = false
+		
+		-- impulsion verticale SAFE
+		root.Velocity = Vector3.new(
+			root.Velocity.X,
+			50, -- hauteur du boost (tu peux mettre 40–70)
+			root.Velocity.Z
+		)
+		
+		task.wait(0.15)
+		canJump = true
+	end
+end)
+
+-- ===== OPTIONAL: ANTI FALL DAMAGE WHILE INF JUMP =====
+RunService.Stepped:Connect(function()
+	if infJumpEnabled then
+		local hum = getHumanoid()
+		if hum then
+			hum:ChangeState(Enum.HumanoidStateType.Physics)
+		end
 	end
 end)

@@ -160,91 +160,72 @@ UIS.JumpRequest:Connect(function()
 	if root then
 		root.Velocity = Vector3.new(root.Velocity.X, 60, root.Velocity.Z)
 	end
-end)
+-- ===== ESP BEST MOBILE - BASE / STRUCTURE =====
 
--- =========================================
--- === ESP BEST ULTRA UNIVERSAL ============
--- =========================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local player = Players.LocalPlayer
 
-local espBestEnabled = false
-local espHighlight, espBillboard, espLoop
+local espEnabled = true
+local highlight, billboard
 
 local function clearESP()
-	if espHighlight then espHighlight:Destroy() espHighlight = nil end
-	if espBillboard then espBillboard:Destroy() espBillboard = nil end
-	if espLoop then espLoop:Disconnect() espLoop = nil end
+	if highlight then pcall(function() highlight:Destroy() end) end
+	if billboard then pcall(function() billboard:Destroy() end) end
+	highlight = nil
+	billboard = nil
 end
 
-local function extractNumber(txt)
-	local n = txt:match("[%d%.]+")
-	return n and tonumber(n)
-end
-
-local function findBest()
-	local best, value = nil, 0
-
-	for _, obj in pairs(workspace:GetDescendants()) do
-		if obj:IsA("NumberValue") and obj.Value > value then
-			value = obj.Value
-			best = obj.Parent
-		end
-
-		if obj:IsA("TextLabel") then
-			local v = extractNumber(obj.Text)
-			if v and v > value then
-				value = v
-				best = obj.Adornee or obj.Parent
+local function findBestBase()
+	for _,obj in pairs(workspace:GetDescendants()) do
+		if obj:IsA("BillboardGui") then
+			local txt = obj:FindFirstChildWhichIsA("TextLabel", true)
+			if txt and txt.Text and txt.Text:lower():find("best") then
+				if obj.Adornee then
+					return obj.Adornee, txt.Text
+				end
 			end
 		end
 	end
-
-	return best, value
+	return nil
 end
 
-local function enableESP()
+local function attachESP(part, text)
 	clearESP()
 
-	espLoop = RunService.Heartbeat:Connect(function()
-		local best, val = findBest()
-		if not best then return end
+	-- Highlight
+	highlight = Instance.new("Highlight")
+	highlight.Adornee = part
+	highlight.FillColor = Color3.fromRGB(180,80,255)
+	highlight.OutlineColor = Color3.new(1,1,1)
+	highlight.Parent = CoreGui
 
-		if espHighlight and espHighlight.Adornee ~= best then
-			clearESP()
-		end
+	-- Billboard perso
+	billboard = Instance.new("BillboardGui")
+	billboard.Adornee = part
+	billboard.Size = UDim2.new(0, 220, 0, 70)
+	billboard.AlwaysOnTop = true
+	billboard.Parent = CoreGui
 
-		if not espHighlight then
-			local part = best:IsA("Model") and best:FindFirstChildWhichIsA("BasePart") or best
-			if not part or not part:IsA("BasePart") then return end
-
-			espHighlight = Instance.new("Highlight", CoreGui)
-			espHighlight.Adornee = best
-			espHighlight.FillColor = ON_COLOR
-			espHighlight.OutlineColor = Color3.new(1,1,1)
-
-			espBillboard = Instance.new("BillboardGui", CoreGui)
-			espBillboard.Adornee = part
-			espBillboard.Size = UDim2.new(0, 240, 0, 60)
-			espBillboard.AlwaysOnTop = true
-
-			local txt = Instance.new("TextLabel", espBillboard)
-			txt.Size = UDim2.new(1,0,1,0)
-			txt.BackgroundTransparency = 1
-			txt.Text = "BEST : ".. tostring(val)
-			txt.TextColor3 = Color3.new(1,1,1)
-			txt.TextStrokeTransparency = 0
-			txt.TextScaled = true
-			txt.Font = Enum.Font.GothamBold
-		end
-	end)
+	local lbl = Instance.new("TextLabel", billboard)
+	lbl.Size = UDim2.new(1,0,1,0)
+	lbl.BackgroundColor3 = Color3.fromRGB(85,0,127)
+	lbl.BackgroundTransparency = 0.15
+	lbl.TextColor3 = Color3.new(1,1,1)
+	lbl.TextScaled = true
+	lbl.Font = Enum.Font.GothamBold
+	lbl.Text = text or "BEST"
+	Instance.new("UICorner", lbl)
 end
 
-espBestBtn.MouseButton1Click:Connect(function()
-	espBestEnabled = not espBestEnabled
-	espBestBtn.BackgroundColor3 = espBestEnabled and ON_COLOR or OFF_COLOR
-
-	if espBestEnabled then
-		enableESP()
-	else
-		clearESP()
+-- Scan en continu (mobile safe)
+RunService.Heartbeat:Connect(function()
+	if not espEnabled then return end
+	local part, text = findBestBase()
+	if part then
+		if not highlight or highlight.Adornee ~= part then
+			attachESP(part, text)
+		end
 	end
 end)

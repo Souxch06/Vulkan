@@ -1,7 +1,3 @@
--- =========================================
--- HUB UI VIOLET - DRAG FIX + BULLE GAUCHE
--- =========================================
-
 if getgenv().HubUI then return end
 getgenv().HubUI = true
 
@@ -11,27 +7,21 @@ local UIS = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 repeat task.wait() until player
 
--- ===== SCALE =====
 local cam = workspace.CurrentCamera
 local screenSize = cam.ViewportSize
 local scale = math.clamp(math.min(screenSize.X / 1920, screenSize.Y / 1080), 0.7, 1)
 
--- ===== CLEAN OLD =====
 pcall(function()
 	if CoreGui:FindFirstChild("HubBubbleUI") then
 		CoreGui.HubBubbleUI:Destroy()
 	end
 end)
 
--- ===== GUI =====
 local gui = Instance.new("ScreenGui", CoreGui)
 gui.Name = "HubBubbleUI"
 gui.IgnoreGuiInset = true
 gui.ResetOnSpawn = false
 
--- =========================================
--- ✅ DRAG SIMPLE & STABLE
--- =========================================
 local function MakeDraggable(frame)
 	frame.Active = true
 
@@ -67,10 +57,6 @@ local function MakeDraggable(frame)
 		end
 	end)
 end
-
--- =========================================
--- ✅ PANEL INFINITE JUMP (VISIBLE AU SPAWN)
--- =========================================
 
 local infPanel = Instance.new("Frame", gui)
 infPanel.Size = UDim2.new(0, 300*scale, 0, 200*scale)
@@ -119,10 +105,6 @@ UIS.JumpRequest:Connect(function()
 	end
 end)
 
--- =========================================
--- ✅ PANEL PARAMÈTRES (APPEARS AU CENTRE)
--- =========================================
-
 local paramPanel = Instance.new("Frame", gui)
 paramPanel.Size = UDim2.new(0, 320*scale, 0, 260*scale)
 paramPanel.Position = UDim2.new(0.5, -160*scale, 0.5, -130*scale) -- ✅ Centre écran
@@ -139,12 +121,6 @@ paramTitle.Text = "PARAMÈTRES"
 paramTitle.TextColor3 = Color3.new(1,1,1)
 paramTitle.Font = Enum.Font.GothamBold
 paramTitle.TextScaled = true
-
--- (Tu ajouteras ici tes futurs boutons ESP)
-
--- =========================================
--- ✅ BULLE GAUCHE
--- =========================================
 
 local bubble = Instance.new("ImageButton", gui)
 bubble.Size = UDim2.new(0, 70*scale, 0, 70*scale)

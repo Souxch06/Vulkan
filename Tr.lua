@@ -184,40 +184,44 @@ UIS.JumpRequest:Connect(function()
 	if root then
 		root.Velocity = Vector3.new(root.Velocity.X, JUMP_FORCE, root.Velocity.Z)
 	end
-end)
 
 -- =========================================
--- ✅ ESP BEST (SCAN UNIVERSEL RÉEL)
+-- ✅ ESP BEST (BASÉ SUR LES TEXTE $/s DU JEU)
 -- =========================================
 
 local espEnabled = false
-local highlight, espBillboard
-local currentTarget
+local currentGui
+local TweenService = game:GetService("TweenService")
 
-local function clearESP()
-	if highlight then highlight:Destroy() end
-	if espBillboard then espBillboard:Destroy() end
-	highlight = nil
-	espBillboard = nil
-	currentTarget = nil
+local function resetESP()
+	if currentGui and currentGui.Parent then
+		currentGui.Size = UDim2.new(0, 100, 0, 50)
+	end
+	currentGui = nil
 end
 
--- 🔍 SCAN DU MEILLEUR OBJET
-local function findBestBrainrot()
-	local bestPart = nil
+local function getValueFromText(text)
+	-- Extrait 250 depuis "$250/s"
+	local num = text:match("%$([%d%.]+)")
+	if num then
+		return tonumber(num)
+	end
+	return nil
+end
+
+local function findBestFromBillboards()
+	local bestGui = nil
 	local bestValue = -math.huge
 
-	for _, obj in pairs(workspace:GetDescendants()) do
-		-- 1️⃣ PRIORITÉ : OBJET AVEC VALEUR
-		if obj:IsA("Model") then
-			for _, v in pairs(obj:GetDescendants()) do
-				if v:IsA("IntValue") or v:IsA("NumberValue") then
-					if v.Value > bestValue then
-						local main = obj:FindFirstChild("HumanoidRootPart") 
-							or obj:FindFirstChildWhichIsA("BasePart")
-						if main then
-							bestValue = v.Value
-							bestPart = main
+	for _, gui in pairs(workspace:GetDescendants()) do
+		if gui:IsA("BillboardGui") then
+			for _, lbl in pairs(gui:GetDescendants()) do
+				if lbl:IsA("TextLabel") then
+					if lbl.Text:find("/s") then
+						local val = getValueFromText(lbl.Text)
+						if val and val > bestValue then
+							bestValue = val
+							bestGui = gui
 						end
 					end
 				end
@@ -225,70 +229,46 @@ local function findBestBrainrot()
 		end
 	end
 
-	-- 2️⃣ FALLBACK : PLUS GROS MODÈLE SI AUCUNE VALEUR
-	if not bestPart then
-		for _, obj in pairs(workspace:GetChildren()) do
-			if obj:IsA("Model") then
-				local size = 0
-				for _, p in pairs(obj:GetDescendants()) do
-					if p:IsA("BasePart") then
-						size += p.Size.Magnitude
-					end
-				end
-				if size > bestValue then
-					local main = obj:FindFirstChildWhichIsA("BasePart")
-					if main then
-						bestValue = size
-						bestPart = main
-					end
-				end
-			end
-		end
-	end
-
-	return bestPart, bestValue
+	return bestGui, bestValue
 end
 
-local function attachESP(part, value)
-	clearESP()
+local function applyESP(gui)
+	resetESP()
+	currentGui = gui
 
-	highlight = Instance.new("Highlight")
-	highlight.FillColor = Color3.fromRGB(170, 90, 255)
-	highlight.OutlineColor = Color3.new(1,1,1)
-	highlight.Adornee = part
-	highlight.Parent = game.CoreGui
+	local tween = TweenService:Create(
+		gui,
+		TweenInfo.new(0.3, Enum.EasingStyle.Quad),
+		{ Size = UDim2.new(0, 180, 0, 80) }
+	)
+	tween:Play()
 
-	espBillboard = Instance.new("BillboardGui")
-	espBillboard.Adornee = part
-	espBillboard.Size = UDim2.new(0, 180, 0, 50)
-	espBillboard.AlwaysOnTop = true
-	espBillboard.Parent = game.CoreGui
-
-	local lbl = Instance.new("TextLabel")
-	lbl.Parent = espBillboard
-	lbl.Size = UDim2.new(1,0,1,0)
-	lbl.BackgroundColor3 = Color3.fromRGB(85, 0, 127)
-	lbl.TextColor3 = Color3.new(1,1,1)
-	lbl.TextScaled = true
-	lbl.Font = Enum.Font.GothamBold
-	lbl.Text = "BEST\n" .. math.floor(value)
-	Instance.new("UICorner", lbl)
+	for _, v in pairs(gui:GetDescendants()) do
+		if v:IsA("TextLabel") then
+			v.TextStrokeTransparency = 0
+			v.TextStrokeColor3 = Color3.fromRGB(170, 0, 255)
+		end
+	end
 end
 
 espBtn.MouseButton1Click:Connect(function()
 	espEnabled = not espEnabled
 	espBtn.BackgroundColor3 = espEnabled and ON_COLOR or OFF_COLOR
+
 	if not espEnabled then
-		clearESP()
+		resetESP()
 	end
 end)
 
-RunService.Heartbeat:Connect(function()
-	if not espEnabled then return end
+task.spawn(function()
+	while true do
+		task.wait(1)
 
-	local part, value = findBestBrainrot()
-	if part and part ~= currentTarget then
-		currentTarget = part
-		attachESP(part, value)
+		if espEnabled then
+			local gui, value = findBestFromBillboards()
+			if gui and gui ~= currentGui then
+				applyESP(gui)
+			end
+		end
 	end
 end)

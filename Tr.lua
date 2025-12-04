@@ -1,246 +1,193 @@
 -- =========================================
--- HUB UI MOBILE + ESP BEST (VERSION STABLE)
+--   VIOLET HUB + ESP BEST (BILLBOARD SAFE)
 -- =========================================
 
-pcall(function()
-	if getgenv().__HUB_LOADED then return end
-	getgenv().__HUB_LOADED = true
-end)
+if getgenv().VioletHub then return end
+getgenv().VioletHub = true
 
+local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
+repeat task.wait() until player
 
--- Sécurité suppression ancienne UI
+-- ===== SCALE MOBILE SAFE =====
+local cam = workspace.CurrentCamera
+local scale = math.clamp(math.min(cam.ViewportSize.X / 1920, cam.ViewportSize.Y / 1080), 0.55, 0.85)
+
 pcall(function()
-	if CoreGui:FindFirstChild("FinalHubUI") then
-		CoreGui.FinalHubUI:Destroy()
+	if CoreGui:FindFirstChild("VioletHubUI") then
+		CoreGui.VioletHubUI:Destroy()
 	end
 end)
 
--- ===== SCALE =====
-local cam = workspace.CurrentCamera
-local screenSize = cam.ViewportSize
-local scale = math.clamp(math.min(screenSize.X / 1920, screenSize.Y / 1080), 0.6, 0.85)
-
--- ===== GUI ROOT =====
-local gui = Instance.new("ScreenGui")
-gui.Name = "FinalHubUI"
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui", CoreGui)
+gui.Name = "VioletHubUI"
 gui.ResetOnSpawn = false
-gui.Parent = CoreGui
-
-local ON_COLOR  = Color3.fromRGB(170, 90, 255)
-local OFF_COLOR = Color3.fromRGB(80, 80, 80)
 
 -- =========================================
--- DRAG MOBILE (STABLE)
+--  DRAG FUNCTION (MOBILE SAFE)
 -- =========================================
 local function makeDraggable(frame)
-	local dragging = false
-	local dragInput, dragStart, startPos
+	local dragging, dragInput, startPos, startUIPos
 
 	frame.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.Touch then
+		if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
-			dragStart = input.Position
-			startPos = frame.Position
-
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
+			startPos = input.Position
+			startUIPos = frame.Position
 		end
+	end)
+
+	frame.InputEnded:Connect(function()
+		dragging = false
 	end)
 
 	frame.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.Touch then
-			dragInput = input
-		end
-	end)
-
-	UIS.InputChanged:Connect(function(input)
-		if input == dragInput and dragging then
-			local delta = input.Position - dragStart
+		if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+			local delta = input.Position - startPos
 			frame.Position = UDim2.new(
-				startPos.X.Scale,
-				startPos.X.Offset + delta.X,
-				startPos.Y.Scale,
-				startPos.Y.Offset + delta.Y
+				startUIPos.X.Scale,
+				startUIPos.X.Offset + delta.X,
+				startUIPos.Y.Scale,
+				startUIPos.Y.Offset + delta.Y
 			)
 		end
 	end)
 end
 
 -- =========================================
--- MAIN PANEL
+--  MAIN PANEL (OPEN AT START)
 -- =========================================
-local mainPanel = Instance.new("Frame")
-mainPanel.Parent = gui
-mainPanel.Size = UDim2.new(0, 220 * scale, 0, 230 * scale)
-mainPanel.Position = UDim2.new(1, -240 * scale, 0.08, 0)
-mainPanel.BackgroundColor3 = Color3.fromRGB(85, 0, 127)
+local mainPanel = Instance.new("Frame", gui)
+mainPanel.Size = UDim2.new(0, 230*scale, 0, 270*scale)
+mainPanel.Position = UDim2.new(1, -250*scale, 0, 40)
+mainPanel.BackgroundColor3 = Color3.fromRGB(80, 0, 120)
 mainPanel.BorderSizePixel = 0
-Instance.new("UICorner", mainPanel)
-
+Instance.new("UICorner", mainPanel).CornerRadius = UDim.new(0, 14)
 makeDraggable(mainPanel)
 
-local mainTitle = Instance.new("TextLabel")
-mainTitle.Parent = mainPanel
-mainTitle.Size = UDim2.new(1, 0, 0, 32 * scale)
+local mainTitle = Instance.new("TextLabel", mainPanel)
+mainTitle.Size = UDim2.new(1,0,0,30*scale)
 mainTitle.BackgroundTransparency = 1
-mainTitle.Text = "MAIN"
+mainTitle.Text = "VIOLET HUB"
 mainTitle.TextColor3 = Color3.new(1,1,1)
-mainTitle.Font = Enum.Font.GothamBold
 mainTitle.TextScaled = true
-
--- ===== Infinite Jump Button =====
-local infJumpBtn = Instance.new("TextButton")
-infJumpBtn.Parent = mainPanel
-infJumpBtn.Size = UDim2.new(0.85, 0, 0, 42 * scale)
-infJumpBtn.Position = UDim2.new(0.075, 0, 0.25, 0)
-infJumpBtn.Text = "Infinite Jump"
-infJumpBtn.BackgroundColor3 = OFF_COLOR
-infJumpBtn.TextColor3 = Color3.new(1,1,1)
-infJumpBtn.Font = Enum.Font.GothamBold
-infJumpBtn.TextScaled = true
-Instance.new("UICorner", infJumpBtn)
+mainTitle.Font = Enum.Font.GothamBold
 
 -- =========================================
--- SETTINGS PANEL
+--  SECOND PANEL (BUBBLE)
 -- =========================================
-local settingsPanel = Instance.new("Frame")
-settingsPanel.Parent = gui
-settingsPanel.Size = UDim2.new(0, 220 * scale, 0, 200 * scale)
-settingsPanel.Position = UDim2.new(0.5, -110 * scale, 0.5, -100 * scale)
-settingsPanel.BackgroundColor3 = Color3.fromRGB(60, 0, 100)
-settingsPanel.Visible = false
-settingsPanel.BorderSizePixel = 0
-Instance.new("UICorner", settingsPanel)
+local espPanel = Instance.new("Frame", gui)
+espPanel.Size = UDim2.new(0, 230*scale, 0, 220*scale)
+espPanel.Position = UDim2.new(0.5, -115*scale, 0.5, -110*scale)
+espPanel.BackgroundColor3 = Color3.fromRGB(70, 0, 110)
+espPanel.Visible = false
+espPanel.BorderSizePixel = 0
+Instance.new("UICorner", espPanel).CornerRadius = UDim.new(0, 14)
+makeDraggable(espPanel)
 
-makeDraggable(settingsPanel)
-
-local setTitle = Instance.new("TextLabel")
-setTitle.Parent = settingsPanel
-setTitle.Size = UDim2.new(1, 0, 0, 30 * scale)
-setTitle.BackgroundTransparency = 1
-setTitle.Text = "SETTINGS"
-setTitle.TextColor3 = Color3.new(1,1,1)
-setTitle.Font = Enum.Font.GothamBold
-setTitle.TextScaled = true
-
--- ===== ESP BEST Button =====
-local espBtn = Instance.new("TextButton")
-espBtn.Parent = settingsPanel
-espBtn.Size = UDim2.new(0.85, 0, 0, 42 * scale)
-espBtn.Position = UDim2.new(0.075, 0, 0.25, 0)
-espBtn.Text = "ESP BEST"
-espBtn.BackgroundColor3 = OFF_COLOR
-espBtn.TextColor3 = Color3.new(1,1,1)
-espBtn.Font = Enum.Font.GothamBold
-espBtn.TextScaled = true
-Instance.new("UICorner", espBtn)
+local espTitle = Instance.new("TextLabel", espPanel)
+espTitle.Size = UDim2.new(1,0,0,30*scale)
+espTitle.BackgroundTransparency = 1
+espTitle.Text = "ESP SETTINGS"
+espTitle.TextScaled = true
+espTitle.TextColor3 = Color3.new(1,1,1)
+espTitle.Font = Enum.Font.GothamBold
 
 -- =========================================
--- BUBBLE
+--  BUBBLE
 -- =========================================
-local bubble = Instance.new("ImageButton")
-bubble.Parent = gui
-bubble.Size = UDim2.new(0, 48 * scale, 0, 48 * scale)
-bubble.Position = UDim2.new(0.03, 0, 0.7, 0)
-bubble.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
-bubble.Image = ""
+local bubble = Instance.new("TextButton", gui)
+bubble.Size = UDim2.new(0, 42*scale, 0, 42*scale)
+bubble.Position = UDim2.new(0.02, 0, 0.5, 0)
+bubble.Text = "◎"
+bubble.TextColor3 = Color3.new(1,1,1)
+bubble.Font = Enum.Font.GothamBold
+bubble.TextScaled = true
+bubble.BackgroundColor3 = Color3.fromRGB(130,0,180)
 bubble.BorderSizePixel = 0
 Instance.new("UICorner", bubble).CornerRadius = UDim.new(1,0)
-
 makeDraggable(bubble)
 
 bubble.MouseButton1Click:Connect(function()
-	settingsPanel.Visible = not settingsPanel.Visible
+	espPanel.Visible = not espPanel.Visible
+	espPanel.Position = UDim2.new(0.5, -115*scale, 0.5, -110*scale)
 end)
 
 -- =========================================
--- INFINITE JUMP (OFF BY DEFAULT)
+--  BUTTON CREATOR
 -- =========================================
-local infJump = false
-local lastJump = 0
-local JUMP_FORCE = 65
+local function createToggle(parent, text, yPos)
+	local btn = Instance.new("TextButton", parent)
+	btn.Size = UDim2.new(0.85,0,0,36*scale)
+	btn.Position = UDim2.new(0.075,0,0,yPos)
+	btn.Text = text
+	btn.TextScaled = true
+	btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Font = Enum.Font.GothamBold
+	btn.BorderSizePixel = 0
+	Instance.new("UICorner", btn)
+	return btn
+end
 
-infJumpBtn.MouseButton1Click:Connect(function()
-	infJump = not infJump
-	infJumpBtn.BackgroundColor3 = infJump and ON_COLOR or OFF_COLOR
-end)
+local ON_COLOR  = Color3.fromRGB(160, 0, 220)
+local OFF_COLOR = Color3.fromRGB(60, 60, 60)
 
-UIS.JumpRequest:Connect(function()
-	if not infJump then return end
-	if tick() - lastJump < 0.2 then return end
-	lastJump = tick()
-
-	local char = player.Character
-	if not char then return end
-	local root = char:FindFirstChild("HumanoidRootPart")
-	if root then
-		root.Velocity = Vector3.new(root.Velocity.X, JUMP_FORCE, root.Velocity.Z)
-	end		
 -- =========================================
--- ✅ ESP BEST (BASÉ SUR LES TEXTE $/s DU JEU)
+--  ESP BEST BUTTON
 -- =========================================
+local espBtn = createToggle(espPanel, "ESP BEST", 50)
 
 local espEnabled = false
 local currentGui
-local TweenService = game:GetService("TweenService")
+
+local function getValueFromText(text)
+	local num = text:match("%$([%d%.]+)")
+	return tonumber(num)
+end
 
 local function resetESP()
-	if currentGui and currentGui.Parent then
-		currentGui.Size = UDim2.new(0, 100, 0, 50)
+	if currentGui and currentGui.Parent and currentGui.__oldSize then
+		currentGui.Size = currentGui.__oldSize
 	end
 	currentGui = nil
 end
 
-local function getValueFromText(text)
-	-- Extrait 250 depuis "$250/s"
-	local num = text:match("%$([%d%.]+)")
-	if num then
-		return tonumber(num)
-	end
-	return nil
-end
-
-local function findBestFromBillboards()
-	local bestGui = nil
+local function findBestBillboard()
+	local bestGui
 	local bestValue = -math.huge
 
-	for _, gui in pairs(workspace:GetDescendants()) do
-		if gui:IsA("BillboardGui") then
-			for _, lbl in pairs(gui:GetDescendants()) do
-				if lbl:IsA("TextLabel") then
-					if lbl.Text:find("/s") then
-						local val = getValueFromText(lbl.Text)
-						if val and val > bestValue then
-							bestValue = val
-							bestGui = gui
-						end
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if obj:IsA("BillboardGui") then
+			for _, lbl in pairs(obj:GetDescendants()) do
+				if lbl:IsA("TextLabel") and lbl.Text:find("/s") then
+					local v = getValueFromText(lbl.Text)
+					if v and v > bestValue then
+						bestValue = v
+						bestGui = obj
 					end
 				end
 			end
 		end
 	end
 
-	return bestGui, bestValue
+	return bestGui
 end
 
 local function applyESP(gui)
 	resetESP()
 	currentGui = gui
+	gui.__oldSize = gui.Size
 
-	local tween = TweenService:Create(
+	TweenService:Create(
 		gui,
-		TweenInfo.new(0.3, Enum.EasingStyle.Quad),
-		{ Size = UDim2.new(0, 180, 0, 80) }
-	)
-	tween:Play()
+		TweenInfo.new(0.25),
+		{ Size = gui.Size + UDim2.new(0, 70, 0, 35) }
+	):Play()
 
 	for _, v in pairs(gui:GetDescendants()) do
 		if v:IsA("TextLabel") then
@@ -262,11 +209,10 @@ end)
 task.spawn(function()
 	while true do
 		task.wait(1)
-
 		if espEnabled then
-			local gui, value = findBestFromBillboards()
-			if gui and gui ~= currentGui then
-				applyESP(gui)
+			local guiFound = findBestBillboard()
+			if guiFound and guiFound ~= currentGui then
+				applyESP(guiFound)
 			end
 		end
 	end

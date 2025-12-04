@@ -138,82 +138,68 @@ local ON_COLOR  = Color3.fromRGB(160, 0, 220)
 local OFF_COLOR = Color3.fromRGB(60, 60, 60)
 
 -- =========================================
---  ESP BEST BUTTON
+-- ✅ ESP BEST ULTRA COMPATIBLE (SCAN TEXTE ÉCRAN)
 -- =========================================
-local espBtn = createToggle(espPanel, "ESP BEST", 50)
 
 local espEnabled = false
-local currentGui
+local ESPBox
+local RunService = game:GetService("RunService")
 
-local function getValueFromText(text)
-	local num = text:match("%$([%d%.]+)")
-	return tonumber(num)
-end
-
-local function resetESP()
-	if currentGui and currentGui.Parent and currentGui.__oldSize then
-		currentGui.Size = currentGui.__oldSize
-	end
-	currentGui = nil
-end
-
-local function findBestBillboard()
-	local bestGui
-	local bestValue = -math.huge
-
-	for _, obj in pairs(workspace:GetDescendants()) do
-		if obj:IsA("BillboardGui") then
-			for _, lbl in pairs(obj:GetDescendants()) do
-				if lbl:IsA("TextLabel") and lbl.Text:find("/s") then
-					local v = getValueFromText(lbl.Text)
-					if v and v > bestValue then
-						bestValue = v
-						bestGui = obj
-					end
-				end
-			end
-		end
-	end
-
-	return bestGui
-end
-
-local function applyESP(gui)
-	resetESP()
-	currentGui = gui
-	gui.__oldSize = gui.Size
-
-	TweenService:Create(
-		gui,
-		TweenInfo.new(0.25),
-		{ Size = gui.Size + UDim2.new(0, 70, 0, 35) }
-	):Play()
-
-	for _, v in pairs(gui:GetDescendants()) do
-		if v:IsA("TextLabel") then
-			v.TextStrokeTransparency = 0
-			v.TextStrokeColor3 = Color3.fromRGB(170, 0, 255)
-		end
-	end
-end
-
+-- bouton déjà existant dans ton script
 espBtn.MouseButton1Click:Connect(function()
 	espEnabled = not espEnabled
 	espBtn.BackgroundColor3 = espEnabled and ON_COLOR or OFF_COLOR
 
-	if not espEnabled then
-		resetESP()
+	if not espEnabled and ESPBox then
+		ESPBox:Destroy()
+		ESPBox = nil
 	end
 end)
 
-task.spawn(function()
-	while true do
-		task.wait(1)
-		if espEnabled then
-			local guiFound = findBestBillboard()
-			if guiFound and guiFound ~= currentGui then
-				applyESP(guiFound)
+local function getValue(text)
+	local n = text:match("%$([%d%.]+)")
+	return tonumber(n)
+end
+
+local function findBestFromScreen()
+	local bestLabel = nil
+	local bestValue = -math.huge
+
+	for _, v in pairs(game:GetDescendants()) do
+		if v:IsA("TextLabel") and v.Visible and v.Text:find("/s") then
+			local val = getValue(v.Text)
+			if val and val > bestValue then
+				bestValue = val
+				bestLabel = v
 			end
+		end
+	end
+
+	return bestLabel
+end
+
+local function createESP(part)
+	if ESPBox then ESPBox:Destroy() end
+	if not part then return end
+
+	ESPBox = Instance.new("BoxHandleAdornment")
+	ESPBox.Adornee = part
+	ESPBox.AlwaysOnTop = true
+	ESPBox.ZIndex = 10
+	ESPBox.Size = part.Size + Vector3.new(2,2,2)
+	ESPBox.Transparency = 0.3
+	ESPBox.Color3 = Color3.fromRGB(170, 0, 255)
+	ESPBox.Parent = part
+end
+
+RunService.RenderStepped:Connect(function()
+	if not espEnabled then return end
+
+	local bestLabel = findBestFromScreen()
+	if bestLabel and bestLabel.Parent then
+		local model = bestLabel:FindFirstAncestorOfClass("Model")
+		if model and model:FindFirstChildWhichIsA("BasePart") then
+			createESP(model:FindFirstChildWhichIsA("BasePart"))
 		end
 	end
 end)

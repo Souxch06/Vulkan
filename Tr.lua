@@ -1,5 +1,5 @@
 -- =========================================
---  Floating Hub Bubble UI + ESP BEST
+-- Floating Hub Bubble UI - FINAL FIX
 -- =========================================
 
 if getgenv().HubUI then return end
@@ -12,46 +12,48 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 repeat task.wait() until player
 
--- ===== SCALE =====
-local screenSize = workspace.CurrentCamera.ViewportSize
-local scale = math.clamp(math.min(screenSize.X / 1920, screenSize.Y / 1080), 0.6, 1)
+-- ================= SCALE =================
+local cam = workspace.CurrentCamera
+local screenSize = cam.ViewportSize
+local scale = math.clamp(math.min(screenSize.X / 1920, screenSize.Y / 1080), 0.7, 1)
 
--- ===== REMOVE OLD GUI =====
+-- ============ REMOVE OLD GUI ============
 pcall(function()
 	if CoreGui:FindFirstChild("HubBubbleUI") then
 		CoreGui.HubBubbleUI:Destroy()
 	end
 end)
 
--- ===== SCREEN GUI =====
-local gui = Instance.new("ScreenGui", CoreGui)
+-- ================ GUI ===================
+local gui = Instance.new("ScreenGui")
 gui.Name = "HubBubbleUI"
+gui.Parent = CoreGui
 gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 
--- =========================================
--- DRAG SYSTEM
--- =========================================
+-- ============ DRAG SYSTEM (STABLE) ============
 local function makeDraggable(handle, frame)
 	local dragging = false
 	local dragStart, startPos
 
-	handle.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+	handle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
-			dragStart = i.Position
+			dragStart = input.Position
 			startPos = frame.Position
 		end
 	end)
 
-	handle.InputEnded:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+	handle.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = false
 		end
 	end)
 
-	UIS.InputChanged:Connect(function(i)
-		if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-			local delta = i.Position - dragStart
+	UIS.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = input.Position - dragStart
 			frame.Position = UDim2.new(
 				startPos.X.Scale, startPos.X.Offset + delta.X,
 				startPos.Y.Scale, startPos.Y.Offset + delta.Y
@@ -64,15 +66,15 @@ end
 -- PANEL INFINITE JUMP
 -- =========================================
 local panel = Instance.new("Frame", gui)
-panel.Size = UDim2.new(0,300*scale,0,400*scale)
-panel.Position = UDim2.new(0.5,-150*scale,0.5,-200*scale)
+panel.Size = UDim2.new(0, 320*scale, 0, 420*scale)
+panel.Position = UDim2.new(0.45, 0, 0.3, 0)
 panel.BackgroundColor3 = Color3.fromRGB(85, 0, 127)
 panel.BorderSizePixel = 0
-Instance.new("UICorner", panel).CornerRadius = UDim.new(0,15)
+Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 16)
 
 local topBar = Instance.new("Frame", panel)
-topBar.Size = UDim2.new(1,0,0,40)
-topBar.BackgroundColor3 = Color3.fromRGB(110, 0, 160)
+topBar.Size = UDim2.new(1,0,0,42)
+topBar.BackgroundColor3 = Color3.fromRGB(120, 0, 170)
 topBar.BorderSizePixel = 0
 
 local title = Instance.new("TextLabel", topBar)
@@ -84,27 +86,27 @@ title.Font = Enum.Font.GothamBold
 title.TextScaled = true
 
 local infJumpBtn = Instance.new("TextButton", panel)
-infJumpBtn.Size = UDim2.new(0.8,0,0,50)
-infJumpBtn.Position = UDim2.new(0.1,0,0.25,0)
-infJumpBtn.Text = "Infinite Jump"
-infJumpBtn.BackgroundColor3 = Color3.fromRGB(130,0,180)
+infJumpBtn.Size = UDim2.new(0.85,0,0,50)
+infJumpBtn.Position = UDim2.new(0.075,0,0.25,0)
+infJumpBtn.Text = "Infinite Jump : OFF"
+infJumpBtn.BackgroundColor3 = Color3.fromRGB(120,120,120) -- OFF par défaut
 infJumpBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", infJumpBtn)
 
 -- =========================================
--- SETTINGS PANEL (ESP)
+-- SETTINGS PANEL
 -- =========================================
 local settingsPanel = Instance.new("Frame", gui)
 settingsPanel.Size = panel.Size
-settingsPanel.Position = UDim2.new(0.55,0,0.5,0)
-settingsPanel.BackgroundColor3 = Color3.fromRGB(55, 0, 100)
-settingsPanel.Visible = false
+settingsPanel.Position = UDim2.new(0.55, 0, 0.32, 0)
+settingsPanel.BackgroundColor3 = Color3.fromRGB(55, 0, 105)
 settingsPanel.BorderSizePixel = 0
-Instance.new("UICorner", settingsPanel).CornerRadius = UDim.new(0,15)
+settingsPanel.Visible = false
+Instance.new("UICorner", settingsPanel).CornerRadius = UDim.new(0, 16)
 
 local settingsTop = Instance.new("Frame", settingsPanel)
 settingsTop.Size = topBar.Size
-settingsTop.BackgroundColor3 = Color3.fromRGB(90, 0, 150)
+settingsTop.BackgroundColor3 = Color3.fromRGB(95, 0, 150)
 settingsTop.BorderSizePixel = 0
 
 local settingsTitle = Instance.new("TextLabel", settingsTop)
@@ -115,16 +117,14 @@ settingsTitle.TextColor3 = Color3.new(1,1,1)
 settingsTitle.Font = Enum.Font.GothamBold
 settingsTitle.TextScaled = true
 
--- =========================================
--- ESP BEST TOGGLE
--- =========================================
-local espBestEnabled = true
+-- ============ ESP BEST TOGGLE (OFF DEFAULT) ============
+local espBestEnabled = false
 
 local espBestBtn = Instance.new("TextButton", settingsPanel)
-espBestBtn.Size = UDim2.new(0.85,0,0,45)
+espBestBtn.Size = UDim2.new(0.85,0,0,46)
 espBestBtn.Position = UDim2.new(0.075,0,0.25,0)
-espBestBtn.Text = "ESP BEST : ON"
-espBestBtn.BackgroundColor3 = Color3.fromRGB(160,50,230)
+espBestBtn.Text = "ESP BEST : OFF"
+espBestBtn.BackgroundColor3 = Color3.fromRGB(120,120,120)
 espBestBtn.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", espBestBtn)
 
@@ -132,32 +132,33 @@ espBestBtn.MouseButton1Click:Connect(function()
 	espBestEnabled = not espBestEnabled
 	espBestBtn.Text = "ESP BEST : "..(espBestEnabled and "ON" or "OFF")
 	espBestBtn.BackgroundColor3 = espBestEnabled 
-		and Color3.fromRGB(160,50,230) 
-		or Color3.fromRGB(90,90,90)
+		and Color3.fromRGB(170,70,255)
+		or Color3.fromRGB(120,120,120)
 end)
 
 -- =========================================
--- ESP BEST SYSTEM (AUTO-DETECTION)
+-- ESP BEST SYSTEM (CORRIGÉ)
 -- =========================================
-local espLabel
+local currentESP
 
 local function clearESP()
-	if espLabel then
-		espLabel:Destroy()
-		espLabel = nil
+	if currentESP then
+		currentESP:Destroy()
+		currentESP = nil
 	end
 end
 
 local function getBestBrainrot()
 	local best, bestValue = nil, 0
 
-	for _,v in pairs(workspace:GetDescendants()) do
-		if v:IsA("Model") then
-			local value = v:FindFirstChild("Value") or v:FindFirstChild("Amount") or v:FindFirstChild("Money")
-			if value and value:IsA("NumberValue") then
-				if value.Value > bestValue then
-					bestValue = value.Value
-					best = v
+	for _,obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("Model") then
+			for _,v in ipairs(obj:GetChildren()) do
+				if v:IsA("NumberValue") and (string.find(v.Name:lower(), "sec") or string.find(v.Name:lower(), "rate") or string.find(v.Name:lower(), "s")) then
+					if v.Value > bestValue then
+						bestValue = v.Value
+						best = obj
+					end
 				end
 			end
 		end
@@ -173,37 +174,44 @@ RunService.RenderStepped:Connect(function()
 	end
 
 	local best, value = getBestBrainrot()
-
-	if best and best:FindFirstChild("HumanoidRootPart") then
-		if not espLabel then
-			espLabel = Instance.new("BillboardGui", best.HumanoidRootPart)
-			espLabel.Size = UDim2.new(0,200,0,50)
-			espLabel.AlwaysOnTop = true
-
-			local txt = Instance.new("TextLabel", espLabel)
-			txt.Size = UDim2.new(1,0,1,0)
-			txt.BackgroundTransparency = 1
-			txt.TextColor3 = Color3.fromRGB(255, 0, 255)
-			txt.TextStrokeTransparency = 0
-			txt.Font = Enum.Font.GothamBold
-			txt.TextScaled = true
-			txt.Name = "TXT"
-		end
-
-		espLabel.Parent = best.HumanoidRootPart
-		espLabel.TXT.Text = best.Name.." | "..math.floor(value).."/s"
-	else
+	if not best then
 		clearESP()
+		return
 	end
+
+	local root = best:FindFirstChild("HumanoidRootPart") or best:FindFirstChildWhichIsA("BasePart")
+	if not root then
+		clearESP()
+		return
+	end
+
+	if not currentESP then
+		currentESP = Instance.new("BillboardGui")
+		currentESP.Size = UDim2.new(0, 220, 0, 45)
+		currentESP.AlwaysOnTop = true
+		currentESP.Parent = root
+
+		local txt = Instance.new("TextLabel", currentESP)
+		txt.Size = UDim2.new(1,0,1,0)
+		txt.BackgroundTransparency = 1
+		txt.TextColor3 = Color3.fromRGB(255, 0, 255)
+		txt.TextStrokeTransparency = 0
+		txt.Font = Enum.Font.GothamBold
+		txt.TextScaled = true
+		txt.Name = "TXT"
+	end
+
+	currentESP.Parent = root
+	currentESP.TXT.Text = best.Name.." | "..math.floor(value).."/s"
 end)
 
 -- =========================================
 -- BULLE AGRANDIE
 -- =========================================
 local bubble = Instance.new("ImageButton", gui)
-bubble.Size = UDim2.new(0,70*scale,0,70*scale) -- AGRANDIE ✅
-bubble.Position = UDim2.new(0.02,0,0.8,0)
-bubble.BackgroundColor3 = Color3.fromRGB(130,0,180)
+bubble.Size = UDim2.new(0, 80*scale, 0, 80*scale) -- AGRANDIE ✅
+bubble.Position = UDim2.new(0.02, 0, 0.8, 0)
+bubble.BackgroundColor3 = Color3.fromRGB(140, 0, 200)
 bubble.Image = ""
 bubble.BorderSizePixel = 0
 Instance.new("UICorner", bubble).CornerRadius = UDim.new(1,0)
@@ -213,31 +221,32 @@ bubble.MouseButton1Click:Connect(function()
 end)
 
 -- =========================================
--- INFINITE JUMP
+-- INFINITE JUMP (OFF PAR DÉFAUT)
 -- =========================================
 local infJumpEnabled = false
 local lastJump = 0
 
 infJumpBtn.MouseButton1Click:Connect(function()
 	infJumpEnabled = not infJumpEnabled
+	infJumpBtn.Text = "Infinite Jump : "..(infJumpEnabled and "ON" or "OFF")
 	infJumpBtn.BackgroundColor3 = infJumpEnabled 
 		and Color3.fromRGB(190,80,255)
-		or Color3.fromRGB(130,0,180)
+		or Color3.fromRGB(120,120,120)
 end)
 
 UIS.JumpRequest:Connect(function()
 	if not infJumpEnabled then return end
-	if tick() - lastJump < 0.2 then return end
+	if tick() - lastJump < 0.25 then return end
 	lastJump = tick()
 
 	local char = player.Character
 	if char and char:FindFirstChild("HumanoidRootPart") then
-		char.HumanoidRootPart.Velocity = Vector3.new(0,65,0)
+		char.HumanoidRootPart.Velocity = Vector3.new(0, 70, 0)
 	end
 end)
 
 -- =========================================
--- ENABLE DRAG
+-- ACTIVER LE DRAG (RÉEL)
 -- =========================================
 makeDraggable(topBar, panel)
 makeDraggable(settingsTop, settingsPanel)

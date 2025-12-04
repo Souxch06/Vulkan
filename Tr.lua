@@ -77,6 +77,16 @@ mainTitle.TextColor3 = Color3.new(1,1,1)
 mainTitle.TextScaled = true
 mainTitle.Font = Enum.Font.GothamBold
 
+-- ESP STATUS (Ajout d'un indicateur d'état ESP)
+local espStatus = Instance.new("TextLabel", mainPanel)
+espStatus.Size = UDim2.new(1,0,0,20*scale)
+espStatus.Position = UDim2.new(0,0,0,32*scale)
+espStatus.BackgroundTransparency = 1
+espStatus.Text = "ESP: OFF"
+espStatus.TextColor3 = Color3.fromRGB(180, 80, 200)
+espStatus.TextScaled = true
+espStatus.Font = Enum.Font.Gotham
+
 -- =========================================
 --  SECOND PANEL (BUBBLE)
 -- =========================================
@@ -144,6 +154,7 @@ local espBtn = createToggle(espPanel, "ESP BEST", 50)
 
 local espEnabled = false
 local currentGui
+local espOriginals = {}
 
 local function getValueFromText(text)
 	local num = text:match("%$([%d%.]+)")
@@ -151,10 +162,17 @@ local function getValueFromText(text)
 end
 
 local function resetESP()
-	if currentGui and currentGui.Parent and currentGui.__oldSize then
-		currentGui.Size = currentGui.__oldSize
+	if currentGui and currentGui.Parent and espOriginals[currentGui] then
+		currentGui.Size = espOriginals[currentGui].Size
+		for _,v in pairs(currentGui:GetDescendants()) do
+			if v:IsA("TextLabel") and espOriginals[v] then
+				v.TextStrokeTransparency = espOriginals[v].TextStrokeTransparency
+				v.TextStrokeColor3 = espOriginals[v].TextStrokeColor3
+			end
+		end
 	end
 	currentGui = nil
+	espOriginals = {}
 end
 
 local function findBestBillboard()
@@ -164,7 +182,7 @@ local function findBestBillboard()
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("BillboardGui") then
 			for _, lbl in pairs(obj:GetDescendants()) do
-				if lbl:IsA("TextLabel") and lbl.Text:find("/s") then
+				if lbl:IsA("TextLabel") and lbl.Text and lbl.Text:find("/s") then
 					local v = getValueFromText(lbl.Text)
 					if v and v > bestValue then
 						bestValue = v
@@ -181,7 +199,19 @@ end
 local function applyESP(gui)
 	resetESP()
 	currentGui = gui
-	gui.__oldSize = gui.Size
+
+	-- Save original states
+	espOriginals[gui] = {
+		Size = gui.Size
+	}
+	for _,v in pairs(gui:GetDescendants()) do
+		if v:IsA("TextLabel") then
+			espOriginals[v] = {
+				TextStrokeTransparency = v.TextStrokeTransparency,
+				TextStrokeColor3 = v.TextStrokeColor3
+			}
+		end
+	end
 
 	TweenService:Create(
 		gui,
@@ -200,6 +230,7 @@ end
 espBtn.MouseButton1Click:Connect(function()
 	espEnabled = not espEnabled
 	espBtn.BackgroundColor3 = espEnabled and ON_COLOR or OFF_COLOR
+	espStatus.Text = espEnabled and "ESP: ON" or "ESP: OFF"
 
 	if not espEnabled then
 		resetESP()
@@ -213,6 +244,12 @@ task.spawn(function()
 			local guiFound = findBestBillboard()
 			if guiFound and guiFound ~= currentGui then
 				applyESP(guiFound)
+			elseif not guiFound and currentGui then
+				resetESP()
+			end
+		else
+			if currentGui then
+				resetESP()
 			end
 		end
 	end

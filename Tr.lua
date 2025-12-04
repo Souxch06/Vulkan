@@ -183,8 +183,7 @@ UIS.JumpRequest:Connect(function()
 	local root = char:FindFirstChild("HumanoidRootPart")
 	if root then
 		root.Velocity = Vector3.new(root.Velocity.X, JUMP_FORCE, root.Velocity.Z)
-	end
-
+	end		
 -- =========================================
 -- ✅ ESP BEST (BASÉ SUR LES TEXTE $/s DU JEU)
 -- =========================================

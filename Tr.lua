@@ -187,55 +187,91 @@ UIS.JumpRequest:Connect(function()
 end)
 
 -- =========================================
--- ESP BEST (BILLBOARD "BEST")
+-- ✅ ESP BEST (SCAN UNIVERSEL RÉEL)
 -- =========================================
+
 local espEnabled = false
 local highlight, espBillboard
+local currentTarget
 
 local function clearESP()
-	if highlight then pcall(function() highlight:Destroy() end) end
-	if espBillboard then pcall(function() espBillboard:Destroy() end) end
+	if highlight then highlight:Destroy() end
+	if espBillboard then espBillboard:Destroy() end
 	highlight = nil
 	espBillboard = nil
+	currentTarget = nil
 end
 
-local function findBestBase()
-	for _,obj in pairs(workspace:GetDescendants()) do
-		if obj:IsA("BillboardGui") then
-			local txt = obj:FindFirstChildWhichIsA("TextLabel", true)
-			if txt and txt.Text and txt.Text:lower():find("best") then
-				if obj.Adornee then
-					return obj.Adornee, txt.Text
+-- 🔍 SCAN DU MEILLEUR OBJET
+local function findBestBrainrot()
+	local bestPart = nil
+	local bestValue = -math.huge
+
+	for _, obj in pairs(workspace:GetDescendants()) do
+		-- 1️⃣ PRIORITÉ : OBJET AVEC VALEUR
+		if obj:IsA("Model") then
+			for _, v in pairs(obj:GetDescendants()) do
+				if v:IsA("IntValue") or v:IsA("NumberValue") then
+					if v.Value > bestValue then
+						local main = obj:FindFirstChild("HumanoidRootPart") 
+							or obj:FindFirstChildWhichIsA("BasePart")
+						if main then
+							bestValue = v.Value
+							bestPart = main
+						end
+					end
 				end
 			end
 		end
 	end
+
+	-- 2️⃣ FALLBACK : PLUS GROS MODÈLE SI AUCUNE VALEUR
+	if not bestPart then
+		for _, obj in pairs(workspace:GetChildren()) do
+			if obj:IsA("Model") then
+				local size = 0
+				for _, p in pairs(obj:GetDescendants()) do
+					if p:IsA("BasePart") then
+						size += p.Size.Magnitude
+					end
+				end
+				if size > bestValue then
+					local main = obj:FindFirstChildWhichIsA("BasePart")
+					if main then
+						bestValue = size
+						bestPart = main
+					end
+				end
+			end
+		end
+	end
+
+	return bestPart, bestValue
 end
 
-local function attachESP(part, text)
+local function attachESP(part, value)
 	clearESP()
 
 	highlight = Instance.new("Highlight")
-	highlight.FillColor = ON_COLOR
+	highlight.FillColor = Color3.fromRGB(170, 90, 255)
 	highlight.OutlineColor = Color3.new(1,1,1)
 	highlight.Adornee = part
-	highlight.Parent = gui   -- ✅ IMPORTANT : plus dans CoreGui direct
+	highlight.Parent = game.CoreGui
 
 	espBillboard = Instance.new("BillboardGui")
 	espBillboard.Adornee = part
-	espBillboard.Size = UDim2.new(0, 200, 0, 60)
+	espBillboard.Size = UDim2.new(0, 180, 0, 50)
 	espBillboard.AlwaysOnTop = true
-	espBillboard.Parent = gui  -- ✅ IMPORTANT
+	espBillboard.Parent = game.CoreGui
 
 	local lbl = Instance.new("TextLabel")
 	lbl.Parent = espBillboard
 	lbl.Size = UDim2.new(1,0,1,0)
-	lbl.BackgroundColor3 = Color3.fromRGB(85,0,127)
-	lbl.BackgroundTransparency = 0.2
+	lbl.BackgroundColor3 = Color3.fromRGB(85, 0, 127)
 	lbl.TextColor3 = Color3.new(1,1,1)
 	lbl.TextScaled = true
 	lbl.Font = Enum.Font.GothamBold
-	lbl.Text = text or "BEST"
+	lbl.Text = "BEST\n" .. math.floor(value)
 	Instance.new("UICorner", lbl)
 end
 
@@ -249,12 +285,10 @@ end)
 
 RunService.Heartbeat:Connect(function()
 	if not espEnabled then return end
-	local part, text = findBestBase()
-	if part then
-		if not highlight or highlight.Adornee ~= part then
-			attachESP(part, text)
-		end
+
+	local part, value = findBestBrainrot()
+	if part and part ~= currentTarget then
+		currentTarget = part
+		attachESP(part, value)
 	end
 end)
-
-print("✅ HUB + ESP BEST MOBILE — SCRIPT LOADED SANS ERREUR")

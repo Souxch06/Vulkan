@@ -1,5 +1,5 @@
 -- =========================================
---   VIOLET HUB + ESP BEST (BILLBOARD SAFE)
+--   VIOLET HUB + ESP BEST (CRITICAL FIXES)
 -- =========================================
 
 if getgenv().VioletHub then return end
@@ -9,6 +9,7 @@ local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 repeat task.wait() until player
 
@@ -78,7 +79,7 @@ mainTitle.TextScaled = true
 mainTitle.Font = Enum.Font.GothamBold
 
 -- =========================================
---  INFINITE JUMP BUTTON (fixé safe)
+--  INFINITE JUMP BUTTON (FIXED - FREEFALL)
 -- =========================================
 local infiniteBtn = Instance.new("TextButton", mainPanel)
 infiniteBtn.Size = UDim2.new(0.85,0,0,36*scale)
@@ -91,6 +92,8 @@ infiniteBtn.Font = Enum.Font.GothamBold
 infiniteBtn.BorderSizePixel = 0
 Instance.new("UICorner", infiniteBtn)
 local infiniteJump = false
+local canJump = true
+local debounceTime = 0.1
 
 local ON_COLOR  = Color3.fromRGB(160, 0, 220)
 local OFF_COLOR = Color3.fromRGB(60, 60, 60)
@@ -100,18 +103,24 @@ infiniteBtn.MouseButton1Click:Connect(function()
 	infiniteBtn.BackgroundColor3 = infiniteJump and ON_COLOR or OFF_COLOR
 end)
 
--- Infinite jump safe version :
+-- CRITICAL FIX: Use Freefall state instead of Jumping to prevent engine throttling
 UIS.JumpRequest:Connect(function()
-	if not infiniteJump then return end
+	if not infiniteJump or not canJump then return end
 	if not player or not player.Character then return end
 	local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
 	if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
-	-- Optional: ignore JUMP if ragdoll/Seated/other not normal states (on adapte)
-	local state = humanoid:GetState()
-	if state ~= Enum.HumanoidStateType.Freefall and state ~= Enum.HumanoidStateType.Jumping and state ~= Enum.HumanoidStateType.Running and state ~= Enum.HumanoidStateType.RunningNoPhysics and state ~= Enum.HumanoidStateType.Landed and state ~= Enum.HumanoidStateType.Climbing then
-		return
+	
+	-- Apply debounce
+	canJump = false
+	-- FIX: Use Freefall state instead of Jumping to allow continuous flying
+	humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+	-- Also apply upward velocity for better flying effect
+	local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+	if rootPart then
+		rootPart.Velocity = Vector3.new(rootPart.Velocity.X, 50, rootPart.Velocity.Z)
 	end
-	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	task.wait(debounceTime)
+	canJump = true
 end)
 
 -- =========================================
@@ -172,9 +181,9 @@ local function createToggle(parent, text, yPos)
 end
 
 -- =========================================
---  ESP BEST BUTTON
+--  ESP BEST BUTTON (FIXED)
 -- =========================================
-local espBtn = createToggle(espPanel, "ESP BEST", 50)
+local espBtn = createToggle(espPanel, "ESP BEST")
 
 local espEnabled = false
 local currentGui
@@ -219,31 +228,66 @@ end
 
 local function isBrainrotBillboard(billboardGui)
 	for _, lbl in pairs(billboardGui:GetDescendants()) do
-		if lbl:IsA("TextLabel") and lbl.Text and string.lower(lbl.Text):find("brainrot") then
+		if lbl:IsA("TextLabel") and lbl.Text and (string.lower(lbl.Text):find("brainrot") or string.lower(lbl.Text):find("steal")) then
 			return true
 		end
 	end
 	return false
 end
 
+-- CRITICAL FIX: Improved base detection with raycast
+local function isInBase(billboardGui)
+	if not billboardGui or not billboardGui.Adornee then return false end
+	
+	local adornee = billboardGui.Adornee
+	local position = adornee.Position
+	
+	-- FIX: More lenient height check and better ground detection
+	if position.Y > 5 then
+		-- Check if there's ground below using raycast
+		local raycastResult = Workspace:Raycast(position, Vector3.new(0, -10, 0))
+		if raycastResult and raycastResult.Distance < 8 then
+			return true
+		end
+	end
+	
+	-- FIX: Check parent hierarchy for base-related names
+	local parent = adornee.Parent
+	while parent and parent ~= workspace do
+		local parentName = string.lower(parent.Name)
+		if parentName:find("base") or parentName:find("house") or parentName:find("building") or parentName:find("steal") then
+			return true
+		end
+		parent = parent.Parent
+	end
+	
+	-- If it has brainrot text, show it (less restrictive filtering)
+	return isBrainrotBillboard(billboardGui)
+end
+
+-- CRITICAL FIX: Improved BillboardGui detection
 local function findBestBillboard()
 	local bestGui = nil
 	local bestValue = -math.huge
 	local brainrotGui = nil
 
 	for _, obj in pairs(workspace:GetDescendants()) do
-		if obj:IsA("BillboardGui") then
-			for _, lbl in pairs(obj:GetDescendants()) do
-				if lbl:IsA("TextLabel") and lbl.Text then
-					if lbl.Text:find("/s") then
-						local v = getValueFromText(lbl.Text)
-						if v and v > bestValue then
-							bestValue = v
-							bestGui = obj
+		if obj:IsA("BillboardGui") and obj.Enabled then
+			-- FIX: Less restrictive filtering - check if it's brainrot first
+			if isBrainrotBillboard(obj) then
+				-- Check all valid states
+				for _, lbl in pairs(obj:GetDescendants()) do
+					if lbl:IsA("TextLabel") and lbl.Text then
+						if lbl.Text:find("/s") then
+							local v = getValueFromText(lbl.Text)
+							if v and v > bestValue then
+								bestValue = v
+								bestGui = obj
+							end
 						end
-					end
-					if not brainrotGui and string.lower(lbl.Text):find("brainrot") then
-						brainrotGui = obj
+						if not brainrotGui then
+							brainrotGui = obj
+						end
 					end
 				end
 			end
@@ -252,12 +296,14 @@ local function findBestBillboard()
 	return bestGui or brainrotGui
 end
 
+-- CRITICAL FIX: Enhanced text filtering to remove gold/variant text
 local function cleanBillboardLabels(gui)
 	for _, v in pairs(gui:GetDescendants()) do
 		if v:IsA("TextLabel") and v.Text then
-			-- On masque les labels de rareté, valeur achat, etc.
-			local txt = v.Text:lower()
-			if txt:find("rarete") or txt:find("rarity") or txt:find("rareté") or txt:find("achat") then
+			local txt = string.lower(v.Text)
+			-- Hide rarity, value achat, gold, and variant text
+			if txt:find("rarete") or txt:find("rarity") or txt:find("rareté") or txt:find("achat") or
+			   txt:find("gold") or txt:find("variant") or txt:find("varriant") or txt:find("variente") then
 				v.Visible = false
 			elseif txt:find("%$") and not txt:find("/s") then
 				v.Visible = false
@@ -295,20 +341,28 @@ local function applyESP(gui)
 		end
 	end
 
-	gui.Size = UDim2.new(0, 300, 0, 120)
-	gui.MaxDistance = 1000
-	gui.StudsOffset = Vector3.new(0, 4, 0)
+	-- FIX: Enhanced ESP settings for better visibility with transparent background
+	gui.Size = UDim2.new(0, 400, 0, 150)
+	gui.MaxDistance = 2000
+	gui.StudsOffset = Vector3.new(0, 5, 0)
 	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	gui.AlwaysOnTop = true
+	gui.Enabled = true
+	-- CRITICAL FIX: Make background transparent and remove border
+	gui.BackgroundTransparency = 1
+	gui.BorderSizePixel = 0
 
 	for _, v in pairs(gui:GetDescendants()) do
 		if v:IsA("TextLabel") then
 			v.TextStrokeTransparency = 0
 			v.TextStrokeColor3 = Color3.fromRGB(255, 0, 255)
 			v.TextColor3 = Color3.fromRGB(255, 255, 0)
-			v.TextSize = 50
+			v.TextSize = 60
 			v.Font = Enum.Font.GothamBlack
+			-- CRITICAL FIX: Make text backgrounds transparent
 			v.BackgroundTransparency = 1
+			v.BorderSizePixel = 0
+			v.Visible = true
 		end
 	end
 	cleanBillboardLabels(gui)
@@ -322,9 +376,10 @@ espBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
+-- CRITICAL FIX: More frequent ESP updates and better detection
 task.spawn(function()
 	while true do
-		task.wait(1)
+		task.wait(0.5) -- More frequent updates
 		if espEnabled then
 			local guiFound = findBestBillboard()
 			if guiFound and guiFound ~= currentGui then

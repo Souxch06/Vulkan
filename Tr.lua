@@ -77,15 +77,42 @@ mainTitle.TextColor3 = Color3.new(1,1,1)
 mainTitle.TextScaled = true
 mainTitle.Font = Enum.Font.GothamBold
 
--- ESP STATUS (Ajout d'un indicateur d'état ESP)
-local espStatus = Instance.new("TextLabel", mainPanel)
-espStatus.Size = UDim2.new(1,0,0,20*scale)
-espStatus.Position = UDim2.new(0,0,0,32*scale)
-espStatus.BackgroundTransparency = 1
-espStatus.Text = "ESP: OFF"
-espStatus.TextColor3 = Color3.fromRGB(180, 80, 200)
-espStatus.TextScaled = true
-espStatus.Font = Enum.Font.Gotham
+-- =========================================
+--  INFINITE JUMP BUTTON (fixé safe)
+-- =========================================
+local infiniteBtn = Instance.new("TextButton", mainPanel)
+infiniteBtn.Size = UDim2.new(0.85,0,0,36*scale)
+infiniteBtn.Position = UDim2.new(0.075,0,0,50)
+infiniteBtn.Text = "INFINITE JUMP"
+infiniteBtn.TextScaled = true
+infiniteBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+infiniteBtn.TextColor3 = Color3.new(1,1,1)
+infiniteBtn.Font = Enum.Font.GothamBold
+infiniteBtn.BorderSizePixel = 0
+Instance.new("UICorner", infiniteBtn)
+local infiniteJump = false
+
+local ON_COLOR  = Color3.fromRGB(160, 0, 220)
+local OFF_COLOR = Color3.fromRGB(60, 60, 60)
+
+infiniteBtn.MouseButton1Click:Connect(function()
+	infiniteJump = not infiniteJump
+	infiniteBtn.BackgroundColor3 = infiniteJump and ON_COLOR or OFF_COLOR
+end)
+
+-- Infinite jump safe version :
+UIS.JumpRequest:Connect(function()
+	if not infiniteJump then return end
+	if not player or not player.Character then return end
+	local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+	if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
+	-- Optional: ignore JUMP if ragdoll/Seated/other not normal states (on adapte)
+	local state = humanoid:GetState()
+	if state ~= Enum.HumanoidStateType.Freefall and state ~= Enum.HumanoidStateType.Jumping and state ~= Enum.HumanoidStateType.Running and state ~= Enum.HumanoidStateType.RunningNoPhysics and state ~= Enum.HumanoidStateType.Landed and state ~= Enum.HumanoidStateType.Climbing then
+		return
+	end
+	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+end)
 
 -- =========================================
 --  SECOND PANEL (BUBBLE)
@@ -144,9 +171,6 @@ local function createToggle(parent, text, yPos)
 	return btn
 end
 
-local ON_COLOR  = Color3.fromRGB(160, 0, 220)
-local OFF_COLOR = Color3.fromRGB(60, 60, 60)
-
 -- =========================================
 --  ESP BEST BUTTON
 -- =========================================
@@ -164,10 +188,28 @@ end
 local function resetESP()
 	if currentGui and currentGui.Parent and espOriginals[currentGui] then
 		currentGui.Size = espOriginals[currentGui].Size
+		if espOriginals[currentGui].MaxDistance ~= nil then
+        	currentGui.MaxDistance = espOriginals[currentGui].MaxDistance
+    	end
+		if espOriginals[currentGui].StudsOffset ~= nil then
+			currentGui.StudsOffset = espOriginals[currentGui].StudsOffset
+		end
+		if espOriginals[currentGui].AlwaysOnTop ~= nil then
+			currentGui.AlwaysOnTop = espOriginals[currentGui].AlwaysOnTop
+		end
+		if espOriginals[currentGui].ZIndexBehavior ~= nil then
+			currentGui.ZIndexBehavior = espOriginals[currentGui].ZIndexBehavior
+		end
 		for _,v in pairs(currentGui:GetDescendants()) do
 			if v:IsA("TextLabel") and espOriginals[v] then
 				v.TextStrokeTransparency = espOriginals[v].TextStrokeTransparency
 				v.TextStrokeColor3 = espOriginals[v].TextStrokeColor3
+				v.TextColor3 = espOriginals[v].TextColor3
+				v.TextSize = espOriginals[v].TextSize
+				v.Font = espOriginals[v].Font
+				v.BackgroundColor3 = espOriginals[v].BackgroundColor3
+				v.BackgroundTransparency = espOriginals[v].BackgroundTransparency
+				v.Visible = espOriginals[v].Visible
 			end
 		end
 	end
@@ -175,25 +217,55 @@ local function resetESP()
 	espOriginals = {}
 end
 
+local function isBrainrotBillboard(billboardGui)
+	for _, lbl in pairs(billboardGui:GetDescendants()) do
+		if lbl:IsA("TextLabel") and lbl.Text and string.lower(lbl.Text):find("brainrot") then
+			return true
+		end
+	end
+	return false
+end
+
 local function findBestBillboard()
-	local bestGui
+	local bestGui = nil
 	local bestValue = -math.huge
+	local brainrotGui = nil
 
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("BillboardGui") then
 			for _, lbl in pairs(obj:GetDescendants()) do
-				if lbl:IsA("TextLabel") and lbl.Text and lbl.Text:find("/s") then
-					local v = getValueFromText(lbl.Text)
-					if v and v > bestValue then
-						bestValue = v
-						bestGui = obj
+				if lbl:IsA("TextLabel") and lbl.Text then
+					if lbl.Text:find("/s") then
+						local v = getValueFromText(lbl.Text)
+						if v and v > bestValue then
+							bestValue = v
+							bestGui = obj
+						end
+					end
+					if not brainrotGui and string.lower(lbl.Text):find("brainrot") then
+						brainrotGui = obj
 					end
 				end
 			end
 		end
 	end
+	return bestGui or brainrotGui
+end
 
-	return bestGui
+local function cleanBillboardLabels(gui)
+	for _, v in pairs(gui:GetDescendants()) do
+		if v:IsA("TextLabel") and v.Text then
+			-- On masque les labels de rareté, valeur achat, etc.
+			local txt = v.Text:lower()
+			if txt:find("rarete") or txt:find("rarity") or txt:find("rareté") or txt:find("achat") then
+				v.Visible = false
+			elseif txt:find("%$") and not txt:find("/s") then
+				v.Visible = false
+			else
+				v.Visible = true
+			end
+		end
+	end
 end
 
 local function applyESP(gui)
@@ -202,36 +274,49 @@ local function applyESP(gui)
 
 	-- Save original states
 	espOriginals[gui] = {
-		Size = gui.Size
+		Size = gui.Size,
+		MaxDistance = gui.MaxDistance or nil,
+		StudsOffset = gui.StudsOffset or nil,
+		AlwaysOnTop = gui.AlwaysOnTop or nil,
+		ZIndexBehavior = gui.ZIndexBehavior or nil
 	}
 	for _,v in pairs(gui:GetDescendants()) do
 		if v:IsA("TextLabel") then
 			espOriginals[v] = {
 				TextStrokeTransparency = v.TextStrokeTransparency,
-				TextStrokeColor3 = v.TextStrokeColor3
+				TextStrokeColor3 = v.TextStrokeColor3,
+				TextColor3 = v.TextColor3,
+				TextSize = v.TextSize,
+				Font = v.Font,
+				BackgroundColor3 = v.BackgroundColor3,
+				BackgroundTransparency = v.BackgroundTransparency,
+				Visible = v.Visible
 			}
 		end
 	end
 
-	TweenService:Create(
-		gui,
-		TweenInfo.new(0.25),
-		{ Size = gui.Size + UDim2.new(0, 70, 0, 35) }
-	):Play()
+	gui.Size = UDim2.new(0, 300, 0, 120)
+	gui.MaxDistance = 1000
+	gui.StudsOffset = Vector3.new(0, 4, 0)
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	gui.AlwaysOnTop = true
 
 	for _, v in pairs(gui:GetDescendants()) do
 		if v:IsA("TextLabel") then
 			v.TextStrokeTransparency = 0
-			v.TextStrokeColor3 = Color3.fromRGB(170, 0, 255)
+			v.TextStrokeColor3 = Color3.fromRGB(255, 0, 255)
+			v.TextColor3 = Color3.fromRGB(255, 255, 0)
+			v.TextSize = 50
+			v.Font = Enum.Font.GothamBlack
+			v.BackgroundTransparency = 1
 		end
 	end
+	cleanBillboardLabels(gui)
 end
 
 espBtn.MouseButton1Click:Connect(function()
 	espEnabled = not espEnabled
 	espBtn.BackgroundColor3 = espEnabled and ON_COLOR or OFF_COLOR
-	espStatus.Text = espEnabled and "ESP: ON" or "ESP: OFF"
-
 	if not espEnabled then
 		resetESP()
 	end

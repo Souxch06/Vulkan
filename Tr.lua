@@ -100,15 +100,15 @@ infiniteBtn.MouseButton1Click:Connect(function()
 	infiniteBtn.BackgroundColor3 = infiniteJump and ON_COLOR or OFF_COLOR
 end)
 
--- Infinite jump safe version :
+-- Infinite jump safe version:
 UIS.JumpRequest:Connect(function()
 	if not infiniteJump then return end
 	if not player or not player.Character then return end
 	local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
 	if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
-	-- Optional: ignore JUMP if ragdoll/Seated/other not normal states (on adapte)
+	-- Only jump when on ground: Running, Landed, Climbing
 	local state = humanoid:GetState()
-	if state ~= Enum.HumanoidStateType.Freefall and state ~= Enum.HumanoidStateType.Jumping and state ~= Enum.HumanoidStateType.Running and state ~= Enum.HumanoidStateType.RunningNoPhysics and state ~= Enum.HumanoidStateType.Landed and state ~= Enum.HumanoidStateType.Climbing then
+	if state ~= Enum.HumanoidStateType.Running and state ~= Enum.HumanoidStateType.Landed and state ~= Enum.HumanoidStateType.Climbing then
 		return
 	end
 	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
@@ -227,29 +227,20 @@ local function isBrainrotBillboard(billboardGui)
 end
 
 local function findBestBillboard()
-	local bestGui = nil
-	local bestValue = -math.huge
 	local brainrotGui = nil
 
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("BillboardGui") then
 			for _, lbl in pairs(obj:GetDescendants()) do
-				if lbl:IsA("TextLabel") and lbl.Text then
-					if lbl.Text:find("/s") then
-						local v = getValueFromText(lbl.Text)
-						if v and v > bestValue then
-							bestValue = v
-							bestGui = obj
-						end
-					end
-					if not brainrotGui and string.lower(lbl.Text):find("brainrot") then
-						brainrotGui = obj
-					end
+				if lbl:IsA("TextLabel") and lbl.Text and string.lower(lbl.Text):find("brainrot") then
+					brainrotGui = obj
+					break
 				end
 			end
+			if brainrotGui then break end
 		end
 	end
-	return bestGui or brainrotGui
+	return brainrotGui
 end
 
 local function cleanBillboardLabels(gui)

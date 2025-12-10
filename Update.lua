@@ -306,13 +306,25 @@ end
 -- CRITICAL FIX: Improved BillboardGui detection
 local function findBestBillboard()
 	local bestGui = nil
-	local bestTier = 0
+	local bestTier = 0 -- 3 = SECRET, 2 = GOD, 1 = normal
 	local bestValue = 0
+	local bestFusedScore = -1
+
+	local function isFused(gui)
+		for _, lbl in pairs(gui:GetDescendants()) do
+			if lbl:IsA("TextLabel") and lbl.Text then
+				local t = string.lower(lbl.Text)
+				if t:find("fuse") or t:find("fusion") or t:find("fused") or t:find("en fusion") then
+					return true
+				end
+			end
+		end
+		return false
+	end
 
 	for _, obj in pairs(workspace:GetDescendants()) do
 		if obj:IsA("BillboardGui") and obj.Enabled and isBrainrotBillboard(obj) then
-
-			local tier = getBrainrotTier(obj)
+			local tier = getBrainrotTier(obj) or 1
 			local value = 0
 
 			for _, lbl in pairs(obj:GetDescendants()) do
@@ -324,22 +336,21 @@ local function findBestBillboard()
 				end
 			end
 
-			-- ✅ PRIORITÉ : SECRET > GOD > VALEUR $
-			if tier > bestTier or (tier == bestTier and value > bestValue) then
+			local fused = isFused(obj)
+			local fusedScore = fused and 0 or 1
+
+			if tier > bestTier
+			or (tier == bestTier and fusedScore > bestFusedScore)
+			or (tier == bestTier and fusedScore == bestFusedScore and value > bestValue) then
 				bestTier = tier
 				bestValue = value
+				bestFusedScore = fusedScore
 				bestGui = obj
 			end
 		end
 	end
 
-	if CURRENT_BEST ~= bestGui then
-	CURRENT_BEST = bestGui
-	return bestGui, true
-end
-
-return CURRENT_BEST, false
-
+	return bestGui
 end
 
 -- CRITICAL FIX: Enhanced text filtering to remove gold/variant text
@@ -444,16 +455,22 @@ end)
 task.spawn(function()
 	while true do
 		if espEnabled then
-			local bestGui = findBestBillboard()
-
-			if bestGui and bestGui ~= currentGui then
-				applyESP(bestGui)
-			elseif not bestGui and currentGui then
+			local ok, bestGui = pcall(findBestBillboard)
+			if ok and bestGui then
+				if bestGui ~= currentGui then
+					applyESP(bestGui)
+				end
+			elseif currentGui then
+				resetESP()
+			end
+		else
+			if currentGui then
 				resetESP()
 			end
 		end
 
-		task.wait(1.2) -- scan toutes les 1.2 secondes (fluide + safe perf)
+		task.wait(1) -- scan toutes les 1 seconde (continu + stable)
 	end
 end)
+
 

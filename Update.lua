@@ -244,8 +244,11 @@ end
 
 local function isBrainrotBillboard(billboardGui)
 	for _, lbl in pairs(billboardGui:GetDescendants()) do
-		if lbl:IsA("TextLabel") and lbl.Text and (string.lower(lbl.Text):find("brainrot") or string.lower(lbl.Text):find("steal")) then
-			return true
+		if lbl:IsA("TextLabel") and lbl.Text then
+			local t = string.lower(lbl.Text)
+			if t:find("brainrot") or t:find("steal") or t:find("secret") or t:find("god") then
+				return true
+			end
 		end
 	end
 	return false
@@ -281,25 +284,48 @@ local function isInBase(billboardGui)
 	return isBrainrotBillboard(billboardGui)
 end
 
+local function getBrainrotTier(gui)
+	for _, lbl in pairs(gui:GetDescendants()) do
+		if lbl:IsA("TextLabel") and lbl.Text then
+			local t = string.lower(lbl.Text)
+
+			if t:find("secret") then
+				return 3 -- priorité MAX
+			end
+			if t:find("god") then
+				return 2
+			end
+		end
+	end
+	return 1 -- normal
+end
+
 -- CRITICAL FIX: Improved BillboardGui detection
 local function findBestBillboard()
 	local bestGui = nil
+	local bestTier = 0
 	local bestValue = 0
 
 	for _, obj in pairs(workspace:GetDescendants()) do
-		if obj:IsA("BillboardGui") and obj.Enabled then
-			if isBrainrotBillboard(obj) then
-				for _, lbl in pairs(obj:GetDescendants()) do
-					if lbl:IsA("TextLabel") and lbl.Text then
-						local value = getValueFromText(lbl.Text)
+		if obj:IsA("BillboardGui") and obj.Enabled and isBrainrotBillboard(obj) then
 
-						-- ✅ Prend maintenant aussi les SECRET au-dessus des GOD
-						if value and value > bestValue then
-							bestValue = value
-							bestGui = obj
-						end
+			local tier = getBrainrotTier(obj)
+			local value = 0
+
+			for _, lbl in pairs(obj:GetDescendants()) do
+				if lbl:IsA("TextLabel") and lbl.Text then
+					local v = getValueFromText(lbl.Text)
+					if v and v > value then
+						value = v
 					end
 				end
+			end
+
+			-- ✅ PRIORITÉ : SECRET > GOD > VALEUR $
+			if tier > bestTier or (tier == bestTier and value > bestValue) then
+				bestTier = tier
+				bestValue = value
+				bestGui = obj
 			end
 		end
 	end

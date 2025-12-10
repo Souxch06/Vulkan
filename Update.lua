@@ -192,25 +192,32 @@ local currentGui
 local espOriginals = {}
 
 local function getValueFromText(text)
-	if not text then return nil end
+	-- Supprime les espaces
+	text = text:gsub("%s+", "")
 
-	-- Remplace les virgules et espaces
-	text = text:gsub(",", ""):gsub(" ", "")
+	-- Exemples pris en charge :
+	-- $12.5M/s
+	-- $12000000/s
+	-- $1.2B/s
 
-	-- Détection format $12.5M/s ou $500K/s
-	local num, suffix = text:match("%$([%d%.]+)([MK]?)")
+	local num, suffix = text:match("%$([%d%.]+)([KMB]?)")
 
 	if not num then return nil end
-	num = tonumber(num)
-	if not num then return nil end
+
+	local value = tonumber(num)
+	if not value then return nil end
+
+	suffix = string.upper(suffix)
 
 	if suffix == "K" then
-		num = num * 1_000
+		value = value * 1_000
 	elseif suffix == "M" then
-		num = num * 1_000_000
+		value = value * 1_000_000
+	elseif suffix == "B" then
+		value = value * 1_000_000_000
 	end
 
-	return num
+	return value
 end
 
 local function resetESP()

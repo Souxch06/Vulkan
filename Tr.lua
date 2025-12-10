@@ -1,6 +1,6 @@
--- =========================================
---   VIOLET HUB + ESP BEST (CRITICAL FIXES)
--- =========================================
+-- ====================================== --
+--               VulkanHub                --
+-- ====================================== --
 
 if getgenv().VioletHub then return end
 getgenv().VioletHub = true
@@ -29,7 +29,7 @@ gui.Name = "VioletHubUI"
 gui.ResetOnSpawn = false
 
 -- =========================================
---  DRAG FUNCTION (MOBILE SAFE)
+--  DRAG FUNCTION 
 -- =========================================
 local function makeDraggable(frame)
 	local dragging, dragInput, startPos, startUIPos
@@ -60,7 +60,7 @@ local function makeDraggable(frame)
 end
 
 -- =========================================
---  MAIN PANEL (OPEN AT START)
+--  MAIN PANEL 
 -- =========================================
 local mainPanel = Instance.new("Frame", gui)
 mainPanel.Size = UDim2.new(0, 230*scale, 0, 270*scale)
@@ -124,7 +124,7 @@ UIS.JumpRequest:Connect(function()
 end)
 
 -- =========================================
---  SECOND PANEL (BUBBLE)
+--  BUBBLE
 -- =========================================
 local espPanel = Instance.new("Frame", gui)
 espPanel.Size = UDim2.new(0, 230*scale, 0, 220*scale)
@@ -181,7 +181,7 @@ local function createToggle(parent, text, yPos)
 end
 
 -- =========================================
---  ESP BEST BUTTON (FIXED)
+--  ESP BEST BUTTON ("FIXED")
 -- =========================================
 local espBtn = createToggle(espPanel, "ESP BEST")
 

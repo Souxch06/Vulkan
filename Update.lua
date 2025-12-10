@@ -11,6 +11,9 @@ local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
+local CURRENT_BEST = nil
+local LAST_UPDATE = 0
+local SCAN_DELAY = 2 -- secondes (bon compromis perf / réactivité)
 repeat task.wait() until player
 
 -- ===== SCALE MOBILE SAFE =====
@@ -330,7 +333,13 @@ local function findBestBillboard()
 		end
 	end
 
-	return bestGui
+	if CURRENT_BEST ~= bestGui then
+	CURRENT_BEST = bestGui
+	return bestGui, true
+end
+
+return CURRENT_BEST, false
+
 end
 
 -- CRITICAL FIX: Enhanced text filtering to remove gold/variant text
@@ -429,6 +438,22 @@ task.spawn(function()
 				resetESP()
 			end
 		end
+	end
+end)
+
+task.spawn(function()
+	while true do
+		if os.clock() - LAST_UPDATE >= SCAN_DELAY then
+			LAST_UPDATE = os.clock()
+
+			local best, changed = findBestBillboard()
+
+			if best and changed then
+				updateESP(best) -- TA fonction ESP existante
+			end
+		end
+
+		task.wait(0.1)
 	end
 end)
 

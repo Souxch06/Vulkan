@@ -16,6 +16,14 @@ local LAST_UPDATE = 0
 local SCAN_DELAY = 2 -- secondes (bon compromis perf / réactivité)
 repeat task.wait() until player
 
+player.CharacterAdded:Connect(function()
+	task.wait(1)
+	if currentGui then
+		resetESP()
+	end
+end)
+
+
 -- ===== SCALE MOBILE SAFE =====
 local cam = workspace.CurrentCamera
 local scale = math.clamp(math.min(cam.ViewportSize.X / 1920, cam.ViewportSize.Y / 1080), 0.55, 0.85)
@@ -326,7 +334,7 @@ local function findBestBillboard()
 				end
 			end
 		end
-		return false
+		return bestGui
 	end
 
 	for _, obj in pairs(workspace:GetDescendants()) do
@@ -462,22 +470,26 @@ end)
 task.spawn(function()
 	while true do
 		if espEnabled then
-			local ok, bestGui = pcall(findBestBillboard)
-			if ok and bestGui then
-				if bestGui ~= currentGui then
-					applyESP(bestGui)
-				end
-			elseif currentGui then
-				resetESP()
+			local bestGui = nil
+
+			local ok, result = pcall(function()
+				return findBestBillboard()
+			end)
+
+			if ok then
+				bestGui = result
 			end
-		else
-			if currentGui then
+
+			if bestGui and bestGui ~= currentGui then
+				applyESP(bestGui)
+			end
+
+			if not bestGui and currentGui then
 				resetESP()
 			end
 		end
 
-		task.wait(1) -- scan toutes les 1 seconde (continu + stable)
+		task.wait(0.8) -- scan continu toutes les 0.8 sec (fluide + stable)
 	end
 end)
-
 

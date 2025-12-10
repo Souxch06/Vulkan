@@ -73,16 +73,16 @@ makeDraggable(mainPanel)
 local mainTitle = Instance.new("TextLabel", mainPanel)
 mainTitle.Size = UDim2.new(1,0,0,30*scale)
 mainTitle.BackgroundTransparency = 1
-mainTitle.Text = "VIOLET HUB"
+mainTitle.Text = "VulkanHUB"
 mainTitle.TextColor3 = Color3.new(1,1,1)
 mainTitle.TextScaled = true
 mainTitle.Font = Enum.Font.GothamBold
 
 -- =========================================
---  INFINITE JUMP BUTTON (FIXED - FREEFALL)
+--  INFINITE JUMP BUTTON 
 -- =========================================
 local infiniteBtn = Instance.new("TextButton", mainPanel)
-infiniteBtn.Size = UDim2.new(0.85,0,0,36*scale)
+infiniteBtn.Size = UDim2.new(0.65,0,0,36*scale)
 infiniteBtn.Position = UDim2.new(0.075,0,0,50)
 infiniteBtn.Text = "INFINITE JUMP"
 infiniteBtn.TextScaled = true
@@ -103,7 +103,6 @@ infiniteBtn.MouseButton1Click:Connect(function()
 	infiniteBtn.BackgroundColor3 = infiniteJump and ON_COLOR or OFF_COLOR
 end)
 
--- CRITICAL FIX: Use Freefall state instead of Jumping to prevent engine throttling
 UIS.JumpRequest:Connect(function()
 	if not infiniteJump or not canJump then return end
 	if not player or not player.Character then return end

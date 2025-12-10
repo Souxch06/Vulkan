@@ -443,17 +443,17 @@ end)
 
 task.spawn(function()
 	while true do
-		if os.clock() - LAST_UPDATE >= SCAN_DELAY then
-			LAST_UPDATE = os.clock()
+		if espEnabled then
+			local bestGui = findBestBillboard()
 
-			local best, changed = findBestBillboard()
-
-			if best and changed then
-				updateESP(best) -- TA fonction ESP existante
+			if bestGui and bestGui ~= currentGui then
+				applyESP(bestGui)
+			elseif not bestGui and currentGui then
+				resetESP()
 			end
 		end
 
-		task.wait(0.1)
+		task.wait(1.2) -- scan toutes les 1.2 secondes (fluide + safe perf)
 	end
 end)
 

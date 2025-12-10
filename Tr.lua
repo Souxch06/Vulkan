@@ -2,8 +2,8 @@
 --               VulkanHub                --
 -- ====================================== --
 
-if getgenv().VioletHub then return end
-getgenv().VioletHub = true
+if getgenv().VulkanHub then return end
+getgenv().VulkanHub = true
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -25,7 +25,7 @@ end)
 
 -- ===== GUI =====
 local gui = Instance.new("ScreenGui", CoreGui)
-gui.Name = "VioletHubUI"
+gui.Name = "VulkanHub"
 gui.ResetOnSpawn = false
 
 -- =========================================
